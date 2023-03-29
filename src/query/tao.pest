@@ -1,0 +1,63 @@
+Program = _{ SOI ~ Queries ~ EOF}
+
+Queries = { Query ~ ";" ~ Queries | Query ~ ";" }
+
+Query = { QueryTarg ~ QueryOp ~ QueryArgs }
+
+QueryTarg = { "OBJ" | "ASSOC" }
+
+QueryArgs = {
+    AssocAddArgs
+  | AssocDeleteArgs
+  | AssocChTypeArgs
+  | AssocGetArgs
+  | AssocRGetArgs
+  | AssocCountArgs
+  | AssocRangeArgs
+  | AssocTRangeArgs
+}
+
+AssocAddArgs = { Arg ~ AssocType ~ Arg ~ Arg }
+AssocDeleteArgs = { Arg ~ AssocType ~ Arg }
+AssocChTypeArgs = { Arg ~ AssocType ~ Arg ~ AssocType }
+AssocGetArgs = { Arg ~ AssocType ~ Arg }
+AssocRGetArgs = { Arg ~ AssocType ~ Arg ~ Number ~ Number }
+AssocCountArgs = { Arg ~ AssocType }
+AssocRangeArgs = { Arg ~ AssocType ~ Number ~ Number }
+AssocTRangeArgs = { Arg ~ AssocType ~ Number ~ Number ~ Number }
+
+QueryOp = {
+    "ADD"
+  | "DELETE"
+  | "CHTYPE"
+  | "GET"
+  | "COUNT"
+  | "RANGE"
+  | "TRANGE"
+}
+
+ObjType = {
+    "USER"
+  | "COMMENT"
+  | "LOCATION"
+  | "POST"
+}
+
+AssocType = {
+    "FRIEND"
+  | "LOCATED"
+  | "COMMENT"
+  | "AUTHORED"
+  | "LIKES"
+}
+
+Number = @{ ASCII_DIGIT+ }
+RawString = @{ ASCII_ALPHA ~ ("_" | "-" | " " | ASCII_ALPHANUMERIC)* }
+String = @{ "\"" ~ RawString ~ "\"" }
+
+Arg = { Number | String | ArgList }
+ArgList = { "[" ~ (Arg ~ "," ~ Args | Arg) ~ "]" }
+Args = { Arg ~ Args | Arg }
+
+WHITESPACE = _{ " " | "\t" | "\n" | "\r" }
+EOF = _{ EOI }
