@@ -1,6 +1,6 @@
 Program = _{ SOI ~ Queries ~ EOF}
 
-Queries = { Query ~ ";" ~ Queries | Query ~ ";" }
+Queries = { SOI ~ Query ~ (";" ~ Query)* ~ ";" ~ EOF }
 
 Query = { QueryTarg ~ QueryOp ~ QueryArgs }
 
@@ -15,16 +15,25 @@ QueryArgs = {
   | AssocCountArgs
   | AssocRangeArgs
   | AssocTRangeArgs
+  | ObjAddArgs
+  | ObjGetArgs
+  | ObjDeleteArgs
+  | ObjUpdateArgs
 }
 
-AssocAddArgs = { Arg ~ AssocType ~ Arg ~ Arg }
-AssocDeleteArgs = { Arg ~ AssocType ~ Arg }
+AssocAddArgs = { Number ~ Arg ~ AssocType ~ Arg ~ Number }
+AssocDeleteArgs = { Number ~ AssocType ~ Number }
 AssocChTypeArgs = { Arg ~ AssocType ~ Arg ~ AssocType }
-AssocGetArgs = { Arg ~ AssocType ~ Arg }
-AssocRGetArgs = { Arg ~ AssocType ~ Arg ~ Number ~ Number }
+AssocGetArgs = { Number ~ AssocType ~ NumList }
+AssocRGetArgs = { Number ~ AssocType ~ Arg ~ Number ~ NumList }
 AssocCountArgs = { Arg ~ AssocType }
 AssocRangeArgs = { Arg ~ AssocType ~ Number ~ Number }
 AssocTRangeArgs = { Arg ~ AssocType ~ Number ~ Number ~ Number }
+
+ObjAddArgs = { Number ~ ObjType ~ RawString ~ Number ~ Arg ~ Arg }
+ObjGetArgs = { Number }
+ObjDeleteArgs = { Number }
+ObjUpdateArgs = { Number ~ Arg ~ Arg }
 
 QueryOp = {
     "ADD"
@@ -56,8 +65,8 @@ RawString = @{ ASCII_ALPHA ~ ("_" | "-" | " " | ASCII_ALPHANUMERIC)* }
 String = @{ "\"" ~ RawString ~ "\"" }
 
 Arg = { Number | String | ArgList }
-ArgList = { "[" ~ (Arg ~ "," ~ Args | Arg) ~ "]" }
-Args = { Arg ~ Args | Arg }
+ArgList = { "[" ~ (Number | String) ~ ("," ~ (Number | String))* ~ "]" }
+NumList = { "[" ~ Number ~ ("," ~ Number)* ~ "]" }
 
 WHITESPACE = _{ " " | "\t" | "\n" | "\r" }
 EOF = _{ EOI }
