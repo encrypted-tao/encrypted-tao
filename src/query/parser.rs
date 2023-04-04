@@ -1,4 +1,3 @@
-// assoc_add(id1, atype, id2, time, (k->v)*)        5
 use crate::query::ast::{Arg, AssocType, ObjType, Query, TaoArgs, TaoOp};
 use pest::{self, Parser};
 use std::str::FromStr;
@@ -28,18 +27,12 @@ fn parse_queries(queries: pest::iterators::Pair<Rule>) -> Vec<Query> {
 }
 
 fn parse_query(query: pest::iterators::Pair<Rule>) -> Query {
-    let mut query_components = query.into_inner();
-    let target = query_components.next().unwrap();
-    let op = query_components.next().unwrap();
-    let args = query_components
-        .next()
-        .unwrap()
-        .into_inner()
-        .next()
-        .unwrap();
+    let mut query_body = query.into_inner().next().unwrap().into_inner();
+    let target = query_body.next().unwrap();
+    let op = query_body.next().unwrap();
 
     let tao_op = parse_tao_op(target.as_str(), op.as_str());
-    let tao_args = parse_tao_args(args);
+    let tao_args = parse_tao_args(&tao_op, query_body);
 
     return Query {
         op: tao_op,
@@ -53,6 +46,7 @@ fn parse_tao_op(target: &str, op: &str) -> TaoOp {
         ("ASSOC", "DELETE") => TaoOp::AssocDelete,
         ("ASSOC", "CHTYPE") => TaoOp::AssocChangeType,
         ("ASSOC", "GET") => TaoOp::AssocGet,
+        ("ASSOC", "RGET") => TaoOp::AssocRangeGet,
         ("ASSOC", "COUNT") => TaoOp::AssocCount,
         ("ASSOC", "RANGE") => TaoOp::AssocRange,
         ("ASSOC", "TRANGE") => TaoOp::AssocTimeRange,
@@ -65,27 +59,28 @@ fn parse_tao_op(target: &str, op: &str) -> TaoOp {
     return tao_op;
 }
 
-fn parse_tao_args(args: pest::iterators::Pair<Rule>) -> TaoArgs {
-    match args.as_rule() {
-        Rule::AssocAddArgs => {
-            let (a1, a2, a3, a4, a5, a6) = unwrap_six_args(args);
+fn parse_tao_args(
+    op: &TaoOp,
+    mut args: pest::iterators::Pairs<Rule>,
+) -> TaoArgs {
+    match op {
+        TaoOp::AssocAdd => {
+            let (a1, a2, a3, a4, a5) = unwrap_five_args(args);
             let id1 = Arg::UID(a1.parse().unwrap());
             let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
             let id2 = Arg::UID(a3.parse().unwrap());
             let time = Arg::Num(a4.parse().unwrap());
-            let k = Arg::Str(a5.to_string());
-            let v = Arg::Str(a6.to_string());
+            let data = Arg::Str(a5.to_string());
 
-            return TaoArgs::SixArgs {
+            return TaoArgs::FiveArgs {
                 arg1: id1,
                 arg2: atype,
                 arg3: id2,
                 arg4: time,
-                arg5: k,
-                arg6: v,
+                arg5: data,
             };
         }
-        Rule::AssocDeleteArgs => {
+        TaoOp::AssocDelete => {
             let (a1, a2, a3) = unwrap_three_args(args);
             let id1 = Arg::UID(a1.parse().unwrap());
             let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
@@ -97,7 +92,7 @@ fn parse_tao_args(args: pest::iterators::Pair<Rule>) -> TaoArgs {
                 arg3: id2,
             };
         }
-        Rule::AssocChTypeArgs => {
+        TaoOp::AssocChangeType => {
             let (a1, a2, a3, a4) = unwrap_four_args(args);
             let id1 = Arg::UID(a1.parse().unwrap());
             let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
@@ -111,7 +106,7 @@ fn parse_tao_args(args: pest::iterators::Pair<Rule>) -> TaoArgs {
                 arg4: natype,
             };
         }
-        Rule::AssocGetArgs => {
+        TaoOp::AssocGet => {
             let (a1, a2, a3) = unwrap_three_args(args);
             let id1 = Arg::UID(a1.parse().unwrap());
             let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
@@ -123,7 +118,7 @@ fn parse_tao_args(args: pest::iterators::Pair<Rule>) -> TaoArgs {
                 arg3: idset,
             };
         }
-        Rule::AssocRGetArgs => {
+        TaoOp::AssocRangeGet => {
             let (a1, a2, a3, a4, a5) = unwrap_five_args(args);
             let id1 = Arg::UID(a1.parse().unwrap());
             let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
@@ -139,7 +134,7 @@ fn parse_tao_args(args: pest::iterators::Pair<Rule>) -> TaoArgs {
                 arg5: t2,
             };
         }
-        Rule::AssocCountArgs => {
+        TaoOp::AssocCount => {
             let (a1, a2) = unwrap_two_args(args);
             let id = Arg::UID(a1.parse().unwrap());
             let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
@@ -149,7 +144,7 @@ fn parse_tao_args(args: pest::iterators::Pair<Rule>) -> TaoArgs {
                 arg2: atype,
             };
         }
-        Rule::AssocRangeArgs => {
+        TaoOp::AssocRange => {
             let (a1, a2, a3, a4) = unwrap_four_args(args);
             let id1 = Arg::UID(a1.parse().unwrap());
             let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
@@ -163,7 +158,7 @@ fn parse_tao_args(args: pest::iterators::Pair<Rule>) -> TaoArgs {
                 arg4: r2,
             };
         }
-        Rule::AssocTRangeArgs => {
+        TaoOp::AssocTimeRange => {
             let (a1, a2, a3, a4, a5) = unwrap_five_args(args);
             let id1 = Arg::UID(a1.parse().unwrap());
             let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
@@ -179,28 +174,26 @@ fn parse_tao_args(args: pest::iterators::Pair<Rule>) -> TaoArgs {
                 arg5: lim,
             };
         }
-        Rule::ObjAddArgs => {
-            let (a1, a2, a3, a4) = unwrap_four_args(args);
+        TaoOp::ObjAdd => {
+            let (a1, a2, a3) = unwrap_three_args(args);
             let id = Arg::UID(a1.parse().unwrap());
             let otype = Arg::ObjType(ObjType::from_str(a2).unwrap());
-            let k = Arg::Str(a3.to_string());
-            let v = Arg::Str(a4.to_string());
+            let data = Arg::Str(a3.to_string());
 
-            return TaoArgs::FourArgs {
+            return TaoArgs::ThreeArgs {
                 arg1: id,
                 arg2: otype,
-                arg3: k,
-                arg4: v,
+                arg3: data,
             };
         }
-        Rule::ObjGetArgs => {
-            let mut args = args.into_inner();
+        TaoOp::ObjGet => {
+            // let mut args = args.into_inner();
             let id = Arg::UID(args.next().unwrap().as_str().parse().unwrap());
 
             return TaoArgs::OneArgs { arg1: id };
         }
-        Rule::ObjDeleteArgs => {
-            let mut args = args.into_inner();
+        TaoOp::ObjDelete => {
+            // let mut args = args.into_inner();
             let id = Arg::UID(args.next().unwrap().as_str().parse().unwrap());
 
             return TaoArgs::OneArgs { arg1: id };
@@ -224,15 +217,17 @@ fn parse_id_set(lst: &str) -> Vec<Arg> {
 }
 
 // Embarrassing!
-fn unwrap_two_args(args: pest::iterators::Pair<Rule>) -> (&str, &str) {
-    let mut args = args.into_inner();
+fn unwrap_two_args(mut args: pest::iterators::Pairs<Rule>) -> (&str, &str) {
+    // let mut args = args.into_inner();
     let a1 = args.next().unwrap().as_str();
     let a2 = args.next().unwrap().as_str();
     return (a1, a2);
 }
 
-fn unwrap_three_args(args: pest::iterators::Pair<Rule>) -> (&str, &str, &str) {
-    let mut args = args.into_inner();
+fn unwrap_three_args(
+    mut args: pest::iterators::Pairs<Rule>,
+) -> (&str, &str, &str) {
+    // let mut args = args.into_inner();
     let a1 = args.next().unwrap().as_str();
     let a2 = args.next().unwrap().as_str();
     let a3 = args.next().unwrap().as_str();
@@ -241,9 +236,9 @@ fn unwrap_three_args(args: pest::iterators::Pair<Rule>) -> (&str, &str, &str) {
 }
 
 fn unwrap_four_args(
-    args: pest::iterators::Pair<Rule>,
+    mut args: pest::iterators::Pairs<Rule>,
 ) -> (&str, &str, &str, &str) {
-    let mut args = args.into_inner();
+    // let mut args = args.into_inner();
     let a1 = args.next().unwrap().as_str();
     let a2 = args.next().unwrap().as_str();
     let a3 = args.next().unwrap().as_str();
@@ -253,9 +248,9 @@ fn unwrap_four_args(
 }
 
 fn unwrap_five_args(
-    args: pest::iterators::Pair<Rule>,
+    mut args: pest::iterators::Pairs<Rule>,
 ) -> (&str, &str, &str, &str, &str) {
-    let mut args = args.into_inner();
+    // let mut args = args.into_inner();
     let a1 = args.next().unwrap().as_str();
     let a2 = args.next().unwrap().as_str();
     let a3 = args.next().unwrap().as_str();
@@ -263,17 +258,4 @@ fn unwrap_five_args(
     let a5 = args.next().unwrap().as_str();
 
     return (a1, a2, a3, a4, a5);
-}
-fn unwrap_six_args(
-    args: pest::iterators::Pair<Rule>,
-) -> (&str, &str, &str, &str, &str, &str) {
-    let mut args = args.into_inner();
-    let a1 = args.next().unwrap().as_str();
-    let a2 = args.next().unwrap().as_str();
-    let a3 = args.next().unwrap().as_str();
-    let a4 = args.next().unwrap().as_str();
-    let a5 = args.next().unwrap().as_str();
-    let a6 = args.next().unwrap().as_str();
-
-    return (a1, a2, a3, a4, a5, a6);
 }

@@ -2,48 +2,33 @@ Program = _{ SOI ~ Queries ~ EOF}
 
 Queries = { SOI ~ Query ~ (";" ~ Query)* ~ ";" ~ EOF }
 
-Query = { QueryTarg ~ QueryOp ~ QueryArgs }
-
-QueryTarg = { "OBJ" | "ASSOC" }
-
-QueryArgs = {
-    AssocAddArgs
-  | AssocDeleteArgs
-  | AssocChTypeArgs
-  | AssocGetArgs
-  | AssocRGetArgs
-  | AssocCountArgs
-  | AssocRangeArgs
-  | AssocTRangeArgs
-  | ObjAddArgs
-  | ObjGetArgs
-  | ObjDeleteArgs
-  | ObjUpdateArgs
+Query = {
+    AssocAdd
+  | AssocDelete
+  | AssocChType
+  | AssocGet
+  | AssocRGet
+  | AssocCount
+  | AssocRange
+  | AssocTRange
+  | ObjAdd
+  | ObjGet
+  | ObjDelete
 }
 
-AssocAddArgs = { Number ~ Arg ~ AssocType ~ Arg ~ Number }
-AssocDeleteArgs = { Number ~ AssocType ~ Number }
-AssocChTypeArgs = { Arg ~ AssocType ~ Arg ~ AssocType }
-AssocGetArgs = { Number ~ AssocType ~ NumList }
-AssocRGetArgs = { Number ~ AssocType ~ Arg ~ Number ~ NumList }
-AssocCountArgs = { Arg ~ AssocType }
-AssocRangeArgs = { Arg ~ AssocType ~ Number ~ Number }
-AssocTRangeArgs = { Arg ~ AssocType ~ Number ~ Number ~ Number }
+AssocAdd = { ASSOC ~ ADD ~ Number ~ AssocType ~ Number ~ Number ~ String }
+AssocDelete = { ASSOC ~ DELETE ~ Number ~ AssocType ~ Number }
+AssocChType = { ASSOC ~ CHTYPE ~ Number ~ AssocType ~ Arg ~ AssocType }
+AssocGet = { ASSOC ~ GET ~ Number ~ AssocType ~ NumList }
+AssocRGet = { ASSOC ~ RGET ~ Number ~ AssocType ~ NumList ~ Number ~ Number}
+AssocCount = { ASSOC ~ COUNT ~ Number ~ AssocType }
+AssocRange = { ASSOC ~ RANGE ~ Number ~ AssocType ~ Number ~ Number }
+AssocTRange = { ASSOC ~ TRANGE ~ Number ~ AssocType ~ Number ~ Number ~ Number }
 
-ObjAddArgs = { Number ~ ObjType ~ RawString ~ Number ~ Arg ~ Arg }
-ObjGetArgs = { Number }
-ObjDeleteArgs = { Number }
-ObjUpdateArgs = { Number ~ Arg ~ Arg }
-
-QueryOp = {
-    "ADD"
-  | "DELETE"
-  | "CHTYPE"
-  | "GET"
-  | "COUNT"
-  | "RANGE"
-  | "TRANGE"
-}
+ObjAdd = { OBJ ~ ADD ~ Number ~ ObjType ~ String }
+ObjGet = { OBJ ~ GET ~ Number }
+ObjDelete = { OBJ ~ DELETE ~ Number }
+ObjUpdate = { OBJ ~ UPDATE ~ Number ~ RawString }
 
 ObjType = {
     "USER"
@@ -59,6 +44,19 @@ AssocType = {
   | "AUTHORED"
   | "LIKES"
 }
+
+OBJ = { "OBJ" }
+ASSOC = { "ASSOC" }
+
+ADD = { "ADD" }
+DELETE = { "DELETE" }
+CHTYPE = { "CHTYPE" }
+GET = { "GET" }
+RGET = { "RGET" }
+COUNT = { "COUNT" }
+RANGE = { "RANGE" }
+TRANGE = { "TRANGE" }
+UPDATE = { "UPDATE" }
 
 Number = @{ ASCII_DIGIT+ }
 RawString = @{ ASCII_ALPHA ~ ("_" | "-" | " " | ASCII_ALPHANUMERIC)* }
