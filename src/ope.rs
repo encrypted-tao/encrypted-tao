@@ -184,3 +184,18 @@ pub mod ope {
     }
 }    
 
+/*
+ * OPE tests
+ *  run via `cargo test`
+ *  TO DO: add more testing
+ */
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_encrypt_decrypt() {
+    
+    }
+
+}
