@@ -1,0 +1,70 @@
+Program = _{ SOI ~ Queries ~ EOF}
+
+Queries = { SOI ~ Query ~ (";" ~ Query)* ~ ";" ~ EOF }
+
+Query = {
+    AssocAdd
+  | AssocDelete
+  | AssocChType
+  | AssocGet
+  | AssocRGet
+  | AssocCount
+  | AssocRange
+  | AssocTRange
+  | ObjAdd
+  | ObjGet
+  | ObjDelete
+}
+
+AssocAdd = { ASSOC ~ ADD ~ Number ~ AssocType ~ Number ~ Number ~ String }
+AssocDelete = { ASSOC ~ DELETE ~ Number ~ AssocType ~ Number }
+AssocChType = { ASSOC ~ CHTYPE ~ Number ~ AssocType ~ Arg ~ AssocType }
+AssocGet = { ASSOC ~ GET ~ Number ~ AssocType ~ NumList }
+AssocRGet = { ASSOC ~ RGET ~ Number ~ AssocType ~ NumList ~ Number ~ Number}
+AssocCount = { ASSOC ~ COUNT ~ Number ~ AssocType }
+AssocRange = { ASSOC ~ RANGE ~ Number ~ AssocType ~ Number ~ Number }
+AssocTRange = { ASSOC ~ TRANGE ~ Number ~ AssocType ~ Number ~ Number ~ Number }
+
+ObjAdd = { OBJ ~ ADD ~ Number ~ ObjType ~ String }
+ObjGet = { OBJ ~ GET ~ Number }
+ObjDelete = { OBJ ~ DELETE ~ Number }
+ObjUpdate = { OBJ ~ UPDATE ~ Number ~ RawString }
+
+ObjType = {
+    "USER"
+  | "COMMENT"
+  | "LOCATION"
+  | "POST"
+}
+
+AssocType = {
+    "FRIEND"
+  | "LOCATED"
+  | "COMMENT"
+  | "AUTHORED"
+  | "LIKES"
+}
+
+OBJ = { "OBJ" }
+ASSOC = { "ASSOC" }
+
+ADD = { "ADD" }
+DELETE = { "DELETE" }
+CHTYPE = { "CHTYPE" }
+GET = { "GET" }
+RGET = { "RGET" }
+COUNT = { "COUNT" }
+RANGE = { "RANGE" }
+TRANGE = { "TRANGE" }
+UPDATE = { "UPDATE" }
+
+Number = @{ ASCII_DIGIT+ }
+RawString = @{ ASCII_ALPHA ~ ("_" | "-" | " " | ASCII_ALPHANUMERIC)* }
+String = @{ "\"" ~ RawString ~ "\"" }
+
+Arg = { Number | String | ArgList }
+ArgList = { "[" ~ (Number | String) ~ ("," ~ (Number | String))* ~ "]" }
+NumList = { "[" ~ Number ~ ("," ~ Number)* ~ "]" }
+
+WHITESPACE = _{ " " | "\t" | "\n" | "\r" }
+EOF = _{ EOI }
