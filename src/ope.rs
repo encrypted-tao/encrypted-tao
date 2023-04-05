@@ -69,7 +69,7 @@ pub mod ope {
             if !(self.in_range.contains(plaintext)
                  return;
 
-            return self.recursive_encrypt(plaintext, DEFAULT_INPUT_RANGE_START, DEFAULT_INPUT_RANGE_END);
+            return self.recursive_encrypt(plaintext, self.in_range.start, self.out_range.end);
         }
         
         pub fn recurisve_encrypt(&mut self, plaintext, in_range, out_range) {
@@ -95,11 +95,11 @@ pub mod ope {
                 }
                 let mut tape = self.tape_gen(mid);
                 let hypergeo = Hypergeometric::new(out_size, mid, in_size);
-                let sample = hypergeo.sample(&tape);
+                let sample = hypergeo.sample(&tape); 
 
-                if plaintext <= sample {
+                if (plaintext <= sample) {
                     in_range = Range { in_edge + 1, sample};
-                    out_range = Range { out_edge + 2, mid };
+                    out_range = Range { out_edge + 1, mid };
                 }  else {
                     in_range = Range { sample + 1, in_edge + in_size };
                     out_range = Range { mid + 1, out_edge + out_size };
@@ -109,12 +109,56 @@ pub mod ope {
 
 
         }   
-        pub fn decrypt(&mut self, ciphertext) -> {
+        pub fn decrypt(&mut self, ciphertext) {
+        
+             if !(self.in_range.contains(plaintext)
+                 return;
+
+            return self.recursive_encrypt(plaintext, self.out_range.start, self.out_range.end);
+
        
         }
 
         pub fn recursive_decrypt(&mut self, ciphertext, in_range, out_range) {
-        
+            
+                let in_size = in_range.size();
+                let out_size = out_range.size();
+                let in_edge = in_range.start - 1;
+                let out_edge = out_range.start -1;
+                let tmp = out_size / 2;
+                let mid = out_edge + tmp.ceil();
+
+                // sanity check
+                assert!(in_size <= out_size);
+                    
+                if (in_range.size() == 1) {
+                    let min_in = in_range.start;
+                    let tape = self.tape_gen(min_in);
+                    
+                    let mut rng = thread_rng();
+                    let sample_text = rng.Uniform(out_range, tape);
+                    
+                    if (sample_text.eq(&cipher_text) {
+                        return min_in;
+                    }
+
+                    return -1; // failure 
+                }
+                let mut tape = self.tape_gen(mid);
+                let hypergeo = Hypergeometric::new(out_size, mid, in_size);
+                let sample = hypergeo.sample(&tape);
+
+                if (ciphertext <= mid) {
+                    in_range = Range { in_edge + 1, sample};
+                    out_range = Range { out_edge + 1, mid };
+                }  else {
+                    in_range = Range { sample + 1, in_edge + in_size };
+                    out_range = Range { mid + 1, out_edge + out_size };
+                }
+
+
+                return self.recursive_decrypt(ciphertext, in_range, out_range);
+
         }
 
         /*
