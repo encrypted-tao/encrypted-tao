@@ -1,7 +1,7 @@
-mod query;
+mod tao;
 
 fn main() {
-    let qs = query::parser::parse(
+    let qs = tao::parser::parse(
         "ASSOC ADD 51 LIKES 1001 55 \"hello\"; \
          ASSOC GET 121 FRIEND [1, 2, 3]; \
          ASSOC RGET 123 FRIEND [50, 51, 52] 0 10; \
@@ -15,7 +15,7 @@ fn main() {
         println!("===============");
         println!("Tao Query: {:#?}", q);
         println!("---------------");
-        let s = query::translator::translate(q);
+        let s = tao::translator::translate(q);
         println!("SQL Query: {:#?}", s);
     }
 }

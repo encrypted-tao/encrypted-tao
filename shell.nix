@@ -3,9 +3,6 @@
 let
   pkgs = [
     nixpkgs.rustup
-    nixpkgs.neovim
-    nixpkgs.lua
-    nixpkgs.luajit
   ];
  
 in

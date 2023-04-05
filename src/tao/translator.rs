@@ -1,4 +1,4 @@
-use crate::query::ast::{Arg, Query, TaoArgs, TaoOp};
+use crate::tao::ast::{Arg, Query, TaoArgs, TaoOp};
 
 #[derive(Debug)]
 pub struct SqlQuery {
