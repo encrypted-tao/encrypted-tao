@@ -1,8 +1,8 @@
 pub struct Object {
     pub id: i32,
-    pub key: String,
-    pub obj_type: String,
-    pub val: String,
+    pub key: &'static str,
+    pub obj_type: &'static str,
+    pub val: &'static str,
 }
 
 pub const OBJECTS: &[Object] = &[
@@ -42,10 +42,10 @@ pub struct Association {
     pub id: i32,
     pub obj_1: i32,
     pub obj_2: i32,
-    pub assoc_type: String,
-    pub time_stamp: String,
-    pub key: String,
-    pub val: String,
+    pub assoc_type: &'static str,
+    pub time_stamp: &'static str,
+    pub key: &'static str,
+    pub val: &'static str,
 }
 
 pub const ASSOCIATIONS: &[Association] = &[

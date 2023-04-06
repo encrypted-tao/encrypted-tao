@@ -5,7 +5,7 @@ pub struct Object {
     pub val: String,
 }
 
-pub const OBJECTS: &[Object] = &[
+pub let OBJECTS: &[Object] = &[
     Object {
         id :1,
         key: "Alice",

@@ -1,4 +1,3 @@
-// use dotenv::from_path("../.env");
 use sqlx::{postgres::PgPool, Pool};
 use std::env;
 
