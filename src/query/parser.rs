@@ -1,9 +1,9 @@
-use crate::tao::ast::{Arg, AssocType, ObjType, Query, TaoArgs, TaoOp};
+use crate::query::query::{Arg, AssocType, ObjType, Query, TaoArgs, TaoOp};
 use pest::{self, Parser};
 use std::str::FromStr;
 
 #[derive(pest_derive::Parser)]
-#[grammar = "tao/tao.pest"]
+#[grammar = "query/tao.pest"]
 struct TaoParser;
 
 pub fn parse(source: &str) -> Vec<Query> {

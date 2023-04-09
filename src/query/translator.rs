@@ -1,10 +1,5 @@
-use crate::tao::ast::{Arg, Query, TaoArgs, TaoOp};
-
-#[derive(Debug)]
-pub struct SqlQuery {
-    pub query: String,
-    pub params: Vec<String>,
-}
+use crate::query::query::{Arg, Query, SqlQuery, TaoArgs, TaoOp};
+use serde::{Deserialize, Serialize};
 
 pub fn translate(query: Query) -> SqlQuery {
     let query = match query.op {

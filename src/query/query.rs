@@ -1,7 +1,8 @@
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TaoOp {
     AssocGet,
     AssocRangeGet,
@@ -17,7 +18,7 @@ pub enum TaoOp {
     ObjDelete,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ObjType {
     User,
     Comment,
@@ -50,7 +51,7 @@ impl fmt::Display for ObjType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AssocType {
     Friend,
     Loc,
@@ -92,7 +93,7 @@ impl fmt::Display for AssocType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Arg {
     ObjType(ObjType),
     AssocType(AssocType),
@@ -115,7 +116,7 @@ impl fmt::Display for Arg {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TaoArgs {
     OneArgs {
         arg1: Arg,
@@ -144,8 +145,14 @@ pub enum TaoArgs {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Query {
     pub op: TaoOp,
     pub args: TaoArgs,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SqlQuery {
+    pub query: String,
+    pub params: Vec<String>,
 }
