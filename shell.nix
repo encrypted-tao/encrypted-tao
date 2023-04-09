@@ -3,6 +3,8 @@
 let
   pkgs = [
     nixpkgs.rustup
+    nixpkgs.clang
+    nixpkgs.libiconv
   ];
  
 in
@@ -10,3 +12,6 @@ in
     name = "env";
     buildInputs = pkgs;
   }
+
+
+
