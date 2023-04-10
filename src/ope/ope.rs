@@ -69,6 +69,7 @@ pub mod ope {
     impl OPE {
 
         /*
+         * TO DO
          * hypergeo_sample
          *      Sample hypergeometric distribution using coins
          *      as a source of 'randomness'
@@ -83,10 +84,18 @@ pub mod ope {
             if in_size == out_size {
                 
                 return in_range.start + index - 1;
+            
             }
+            /*
 
-            let hypergeo = Hypergeometric::new(index, in_size, out_size - in_size).unwrap();
-            let samples = hypergeo.sample(&mut coins);
+            //let hypergeo = Hypergeometric::new(index, in_size, out_size - in_size).unwrap();
+
+            if index > 0 {
+
+                
+            } else {
+
+            }
 
             if sample == 0 {
                 
@@ -95,7 +104,7 @@ pub mod ope {
             } else {
 
                 return in_range.start + sample - 1;
-            }
+            }*/
 
         }
         /*
@@ -116,9 +125,11 @@ pub mod ope {
                    cur.end = mid;
                 }
     
-               if coins[index == 1 {
+               if coins[index == 1] {
                    cur.start = mid + 1;
                }
+
+               index = index + 1;
            }
            return cur.start;
 
@@ -152,9 +163,7 @@ pub mod ope {
                 if in_range.size() == 1 {
                     let min_in = in_range.start;
                     let mut tape = self.tape_gen(min_in);
-                    let side = Uniform::new(out_range.start, out_range.end);
-                    let ciphertext = rng.sample(side);
-
+                    let ciphertext = self.uniform_sample(in_range, tape);
                     return ciphertext;
                 }
                 
@@ -199,11 +208,7 @@ pub mod ope {
                 if in_range.size() == 1 {
                     let min_in = in_range.start;
                     let mut tape = self.tape_gen(min_in);
-                    let mut rng = thread_rng().fill(&mut tape);
-                    let side = Uniform::new(out_range.start, out_range.end);
-                    let sample_text = rng.sample(side); // https://rust-random.github.io/rand/rand/distributions/uniform/index.html
-
-                    
+                    let sample_text = self.uniform_sample(in_range, tape);
                     if sample_text.eq(&ciphertext) {
                         return min_in;
                     }
