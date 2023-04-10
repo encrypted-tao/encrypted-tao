@@ -105,7 +105,23 @@ pub mod ope {
          */
         pub fn uniform_sample(&mut self, in_range: u64, coins: &[u8]) -> u64 {
        
-            
+           let cur = in_range.copy();
+           let mut index = 0;
+           
+           while cur.size() > 1 {
+               
+               let mid = ((cur.start + cur.end) / 2).floor();
+               
+               if coins[index] == 0 {
+                   cur.end = mid;
+                }
+    
+               if coins[index == 1 {
+                   cur.start = mid + 1;
+               }
+           }
+           return cur.start;
+
         }
 
         /*
