@@ -28,7 +28,7 @@ pub mod ope {
     use rand::{Rng, thread_rng, SeedableRng};
     use rand::distributions::Uniform; // https://docs.rs/rand/latest/rand/distributions/uniform/index.html
     use rand_distr::{Distribution, Hypergeometric}; // https://rust-random.github.io/rand/rand_distr/struct.Hypergeometric.html
-    use generic_array::{GenericArray};
+    use generic_array::{GenericArray, arr};
 
 
     const DEFAULT_INPUT_RANGE_START: u64 = 0;
@@ -184,7 +184,7 @@ pub mod ope {
             // sanity check
             assert_eq!(hmac_obj.digest_size, 32); 
 
-           aes_cipher.encrypt_block(&mut arr![data_str]);
+           aes_cipher.encrypt_block(&mut arr![u64; data_str]);
         
            return data_str;
 
