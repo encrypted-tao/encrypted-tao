@@ -25,5 +25,5 @@ $ ./tao-server
 
 To run the TAO CLI:
 ```
-$ ./tao-cli
+$ ./tao-cli <host> <port>
 ```
