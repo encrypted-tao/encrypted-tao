@@ -65,6 +65,45 @@ pub mod ope {
     impl OPE {
 
         /*
+         * hypergeo_sample
+         *      Sample hypergeometric distribution using coins
+         *      as a source of 'randomness'
+         */
+        pub fn hypergeo_sample(&mut self, in_range: Range, out_range: Range, seed: u64, coins: &[u8]) -> u64 {
+            
+            let in_size = in_range.size();
+            let out_size = out_range.size();
+
+            let index = seed - out_range.start + 1;
+
+            if in_size == out_size {
+                
+                return in_range.start + index - 1;
+            }
+
+            let hypergeo = Hypergeometric::new(index, in_size, out_size - in_size).unwrap();
+            let samples = hypergeo.sample(&mut coins);
+
+            if sample == 0 {
+                
+                return in_range.start;
+
+            } else {
+
+                return in_range.start + sample - 1;
+            }
+
+        }
+        /*
+         * uniform_sample
+         *      Sample uniform distribution using coins
+         *      as a source of 'randomness'
+         */
+        pub fn uniform_sample(&mut self, in_range: u64, coins: &[u8]) -> u64 {
+        
+        }
+
+        /*
          * encrypt(self, plaintext)
          *  OPE is recursive encryption, check cases then recursive helper
          */
@@ -92,15 +131,14 @@ pub mod ope {
                 if in_range.size() == 1 {
                     let min_in = in_range.start;
                     let mut tape = self.tape_gen(min_in);
-                    let mut rng = thread_rng().fill(&mut tape);
                     let side = Uniform::new(out_range.start, out_range.end);
                     let ciphertext = rng.sample(side);
 
                     return ciphertext;
                 }
+                
                 let mut tape = self.tape_gen(mid);
-                let hypergeo = Hypergeometric::new(out_size, mid, in_size).unwrap();
-                let samples = hypergeo.sample(&mut tape); 
+                let samples = self.hypergeo_sample(in_range, out_range, mid, tape);
 
                 if plaintext.le(&samples) {
                     in_range = Range { start:in_edge + 1, end:samples };
@@ -151,10 +189,9 @@ pub mod ope {
                     // else -> failure
 
                 }
-
+                
                 let mut tape = self.tape_gen(mid);
-                let hypergeo = Hypergeometric::new(out_size, mid, in_size).unwrap();
-                let samples = hypergeo.sample(&mut tape);
+                let samples = self.hypergeo_sample(in_range, out_range, mid, tape);
 
                 if ciphertext.le(&mid) {
                     in_range = Range { start:in_edge + 1, end:samples };
@@ -173,9 +210,9 @@ pub mod ope {
          * tape_gen(self, data)
          *  Return: bit string of data
          */
-        pub fn tape_gen(&mut self, data: u64) -> String {
+        pub fn tape_gen(&mut self, data: u64) -> &[u8] {
             
-            let data_str = data.to_string();
+            let mut data_str = GenericArray::from(data.to_string().as_bytes());
             type HmacSha256 = Hmac<Sha256>;
             let mut hmac_obj = HmacSha256::new_from_slice(self.key.as_bytes());
             let aes_cipher = aes::Aes256::new(&mut hmac_obj.result());
@@ -184,9 +221,9 @@ pub mod ope {
             // sanity check
             assert_eq!(hmac_obj.digest_size, 32); 
 
-           aes_cipher.encrypt_block(&mut arr![u64; data_str]);
+           aes_cipher.encrypt_block(&mut data_str);
         
-           return data_str;
+           return &data_str;
 
         }
 
