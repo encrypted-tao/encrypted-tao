@@ -13,6 +13,11 @@ pub struct QueryRequest {
     pub query: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryResponse {
+    pub response: Vec<query::query::SqlQuery>,
+}
+
 pub struct TaoServer {
     pub cache: Arc<Mutex<Vec<i32>>>, // placeholder for an actual cache
 }
@@ -24,12 +29,15 @@ impl TaoServer {
     }
 
     pub fn pipeline(&self, query_input: String, encrypt: bool) -> HttpResponse {
+        println!("Received Query: {:#?}", query_input);
         let tao_queries = query::parser::parse(query_input.as_str());
         let sql_queries = tao_queries
             .iter()
             .map(|q| query::translator::translate(q.clone()))
             .collect::<Vec<query::query::SqlQuery>>();
-        return HttpResponse::Ok().json(sql_queries);
+        return HttpResponse::Ok().json(&QueryResponse {
+            response: sql_queries,
+        });
     }
 }
 

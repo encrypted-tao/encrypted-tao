@@ -6,17 +6,24 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+actix-rt = "2.8.0"
 actix-web = { version = "4.3.1", features = ["openssl"] }
+awc = { version = "3.1.1", features = ["openssl"] }
 pest = "2.5.6"
 pest_derive = "2.5.6"
 postgres = "0.19.5"
 serde = { version = "1.0.159", features = ["derive"] }
 serde_json = "1.0.95"
+tokio = { version = "1.27.0", features = [ "full" ] }
 
 
 [[bin]]
 name="tao-server"
 path = "src/bin/server.rs"
+
+[[bin]]
+name="tao-cli"
+path = "src/bin/cli.rs"
 
 [[bin]]
 name="main"

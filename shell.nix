@@ -12,6 +12,3 @@ in
     name = "env";
     buildInputs = pkgs;
   }
-
-
-
