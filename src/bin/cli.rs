@@ -47,8 +47,8 @@ fn print_preamble(host: String, port: String) {
     println!("");
     println!("Supported ObjTypes: USER, COMMENT, LOCATION, POST");
     println!("Supported Object Queries");
-    println!("    OBJ ADD id(int) obj(ObjType) data(str)");
-    println!("    OBJ GET id(int)");
+    println!("    OBJ ADD id(int) obj(ObjType) data(str);");
+    println!("    OBJ GET id(int);");
     println!("==========================================================================");
     println!("");
     println!("Connecting to... host: {:#?} port: {:#?}", host, port);
