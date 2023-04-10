@@ -54,6 +54,10 @@ pub mod ope {
             
 
         }
+        
+        pub fn copy(&mut self) -> Range {
+
+            return Range {start:self.start, end:self.end};
     }
 
     pub struct OPE {
@@ -100,7 +104,8 @@ pub mod ope {
          *      as a source of 'randomness'
          */
         pub fn uniform_sample(&mut self, in_range: u64, coins: &[u8]) -> u64 {
-        
+       
+            
         }
 
         /*
