@@ -1,6 +1,6 @@
+use crate::query::query::{SqlQuery, TaoOp};
 use serde::{Deserialize, Serialize};
 use tokio_postgres::Row;
-use crate::query::query::{TaoOp, SqlQuery};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DBRow {
@@ -20,31 +20,32 @@ pub enum DBRow {
     NoRes(bool),
 }
 
-
 fn deserialize_row(op: &TaoOp, row: &Row) -> DBRow {
     match op {
-        TaoOp::AssocGet | TaoOp::AssocRangeGet | TaoOp::AssocRange | TaoOp::AssocTimeRange => {
-            DBRow::AssocRow {
-                id1: row.get(0),
-                atype: row.get(1),
-                id2: row.get(2),
-                t: row.get(3),
-                data: row.get(4),
-            }
+        TaoOp::AssocGet
+        | TaoOp::AssocRangeGet
+        | TaoOp::AssocRange
+        | TaoOp::AssocTimeRange => DBRow::AssocRow {
+            id1: row.get(0),
+            atype: row.get(1),
+            id2: row.get(2),
+            t: row.get(3),
+            data: row.get(4),
         },
         TaoOp::AssocCount => DBRow::Count(row.get(0)),
-        TaoOp::ObjGet => {
-            DBRow::ObjRow {
-                id: row.get(0),
-                otype: row.get(1),
-                data: row.get(2),
-            }
-        }
+        TaoOp::ObjGet => DBRow::ObjRow {
+            id: row.get(0),
+            otype: row.get(1),
+            data: row.get(2),
+        },
         _ => DBRow::NoRes(true),
     }
 }
 
 pub fn deserialize_rows(op: &TaoOp, rows: Vec<Row>) -> Vec<DBRow> {
-    let res = rows.iter().map(|r| deserialize_row(op, r)).collect::<Vec<DBRow>>();
+    let res = rows
+        .iter()
+        .map(|r| deserialize_row(op, r))
+        .collect::<Vec<DBRow>>();
     return res;
 }

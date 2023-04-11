@@ -94,7 +94,7 @@ impl TaoServer {
             Ok(r) => {
                 let res = query::results::deserialize_rows(&sql_query.op, r);
                 Some(res)
-            },
+            }
             Error => panic!("oh no!"),
         }
     }
@@ -110,13 +110,17 @@ impl TaoServer {
             .iter()
             .map(|q| query::translator::translate(q.clone()))
             .collect::<Vec<query::query::SqlQuery>>();
-        
+
         let results = join_all(
-            sql_queries.iter().map(|q| async { self.db_execute(q.clone()).await.unwrap() }),
+            sql_queries
+                .iter()
+                .map(|q| async { self.db_execute(q.clone()).await.unwrap() }),
         )
         .await;
-        
-        return HttpResponse::Ok().json(&QueryResponse { response: sql_queries });
+
+        return HttpResponse::Ok().json(&QueryResponse {
+            response: sql_queries,
+        });
         // return HttpResponse::Ok().json(sql_queries.collect::<Vec<query::query::SqlQuery>>());
     }
 
