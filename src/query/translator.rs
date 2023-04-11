@@ -44,6 +44,7 @@ fn translate_assoc_add(args: TaoArgs) -> SqlQuery {
             ];
 
             return SqlQuery {
+                op: TaoOp::AssocAdd,
                 query: query.to_string(),
                 params: params,
             };
@@ -62,7 +63,7 @@ fn translate_assoc_get(args: TaoArgs) -> SqlQuery {
             let idset = unwrap_idset(idset);
             let in_set = format_in_clause(&idset, 2);
             let query = format!(
-                "SELECT id1, id2, time, data \
+                "SELECT * \
                  FROM Associations \
                  WHERE id1 = $1 \
                  AND atype = $2 \
@@ -73,6 +74,7 @@ fn translate_assoc_get(args: TaoArgs) -> SqlQuery {
                 idset.iter().map(|i| i.to_string()).collect::<Vec<String>>();
             params.extend(idset_str);
             return SqlQuery {
+                op: TaoOp::AssocGet,
                 query: query,
                 params: params,
             };
@@ -93,7 +95,7 @@ fn translate_assoc_range_get(args: TaoArgs) -> SqlQuery {
             let idset = unwrap_idset(idset);
             let in_set = format_in_clause(&idset, 4);
             let query = format!(
-                "SELECT id1, id2, time, data \
+                "SELECT * \
                  FROM Associations \
                  WHERE id1 = $1 \
                    AND atype = $2 \
@@ -112,6 +114,7 @@ fn translate_assoc_range_get(args: TaoArgs) -> SqlQuery {
                 idset.iter().map(|i| i.to_string()).collect::<Vec<String>>();
             params.extend(idset_str);
             return SqlQuery {
+                op: TaoOp::AssocRangeGet,
                 query: query,
                 params: params,
             };
@@ -133,6 +136,7 @@ fn translate_assoc_count(args: TaoArgs) -> SqlQuery {
             let params = vec![id.to_string(), atype.to_string()];
 
             return SqlQuery {
+                op: TaoOp::AssocCount,
                 query: query.to_string(),
                 params: params,
             };
@@ -156,6 +160,7 @@ fn translate_assoc_range(args: TaoArgs) -> SqlQuery {
             let params = vec![id.to_string(), atype.to_string()];
 
             return SqlQuery {
+                op: TaoOp::AssocRange,
                 query: query.to_string(),
                 params: params,
             };
@@ -190,6 +195,7 @@ fn translate_assoc_time_range(args: TaoArgs) -> SqlQuery {
             ];
 
             return SqlQuery {
+                op: TaoOp::AssocTimeRange,
                 query: query.to_string(),
                 params: params,
             };
@@ -214,6 +220,7 @@ fn translate_obj_add(args: TaoArgs) -> SqlQuery {
             let params = vec![id.to_string(), otype.to_string(), data];
 
             return SqlQuery {
+                op: TaoOp::ObjAdd,
                 query: query.to_string(),
                 params: params,
             };
@@ -231,6 +238,7 @@ fn translate_obj_get(args: TaoArgs) -> SqlQuery {
             let params = vec![id.to_string()];
 
             return SqlQuery {
+                op: TaoOp::ObjGet,
                 query: query.to_string(),
                 params: params,
             };

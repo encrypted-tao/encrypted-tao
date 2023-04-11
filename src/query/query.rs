@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TaoOp {
     AssocGet,
     AssocRangeGet,
@@ -151,8 +151,9 @@ pub struct Query {
     pub args: TaoArgs,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SqlQuery {
+    pub op: TaoOp,
     pub query: String,
     pub params: Vec<String>,
 }
