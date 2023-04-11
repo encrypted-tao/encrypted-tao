@@ -7,7 +7,7 @@ use actix_web::{
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::sync::{Arc, Mutex};
-use tokio_postgres::{NoTls, Error};
+use tokio_postgres::{connect, Client, Error, NoTls};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryRequest {
@@ -19,18 +19,67 @@ pub struct QueryResponse {
     pub response: Vec<query::query::SqlQuery>,
 }
 
+pub struct DBConfig {
+    pub host: String,
+    pub user: String,
+    pub password: String,
+    pub db_name: String,
+    pub port: String,
+}
+
+impl DBConfig {
+    pub fn new(env_path: String) -> Self {
+        dotenv::from_path(env_path).ok();
+        let host = dotenv::var("DATABASE_HOST").unwrap();
+        let user = dotenv::var("DATABASE_USERNAME").unwrap();
+        let password = dotenv::var("DATABASE_PASSWORD").unwrap();
+        let db_name = dotenv::var("DATABASE_NAME").unwrap();
+        let port = dotenv::var("DATABASE_PORT_NUM").unwrap();
+        DBConfig {
+            host,
+            user,
+            password,
+            db_name,
+            port,
+        }
+    }
+}
+
 pub struct TaoServer {
     pub cache: Arc<Mutex<Vec<i32>>>,
+    pub db_config: DBConfig,
 }
 
 impl TaoServer {
-    pub fn new() -> Self {
+    pub fn new(env_path: String) -> Self {
         let cache = Arc::new(Mutex::new(vec![]));
-
-        TaoServer { cache }
+        let db_config = DBConfig::new(env_path);
+        TaoServer { cache, db_config }
     }
 
-    pub async fn pipeline(&self, query_input: String, encrypt: bool) -> HttpResponse {
+    pub async fn db_connect(&self) -> Option<Client> {
+        let db_url = format!(
+            "host={} user={} password={} dbname={} port={}",
+            self.db_config.host,
+            self.db_config.user,
+            self.db_config.password,
+            self.db_config.db_name,
+            self.db_config.port
+        );
+        let (client, conn) = connect(db_url.as_str(), NoTls).await.unwrap();
+        tokio::spawn(async move {
+            if let Err(e) = conn.await {
+                eprintln!("connection error: {}", e);
+            }
+        });
+        return Some(client);
+    }
+
+    pub async fn pipeline(
+        &self,
+        query_input: String,
+        encrypt: bool,
+    ) -> HttpResponse {
         println!("Received Query: {:#?}", query_input);
         let tao_queries = query::parser::parse(query_input.as_str());
         let sql_queries = tao_queries
@@ -38,27 +87,23 @@ impl TaoServer {
             .map(|q| query::translator::translate(q.clone()))
             .collect::<Vec<query::query::SqlQuery>>();
 
-        self.db_client().await;    
+        self.db_client().await;
         return HttpResponse::Ok().json(&QueryResponse {
             response: sql_queries,
         });
     }
 
     pub async fn db_client(&self) -> Result<(), Error> {
-        let (client, connection) = tokio_postgres::connect("host=encrypted-tao.clyigb9dssrd.us-east-1.rds.amazonaws.com user=dbuser password=dbuserdbuser dbname=postgres port=5432", NoTls).await.unwrap();
-
-        tokio::spawn(async move {
-            if let Err(e) = connection.await {
-                eprintln!("connection error: {}", e);
-            }
-        });
-
-        let query1 = client.query("
-            INSERT INTO Objects (id, key, obj_type, val)
-            VALUES (1234, 12, 13, 14)
-            ", &[]).await?;        
+        let client = self.db_connect().await.unwrap();
+        let query1 = &client
+            .query(
+                "
+                SELECT * From Objects
+                ",
+                &[],
+            )
+            .await?;
         println!("{:#?}", query1);
-
 
         return Ok(());
     }
@@ -74,7 +119,7 @@ pub async fn query_handler(
     tao: Data<TaoServer>,
     query: Json<QueryRequest>,
 ) -> HttpResponse {
-    let res =  TaoServer::pipeline(&tao, query.into_inner().query, false).await;
+    let res = TaoServer::pipeline(&tao, query.into_inner().query, false).await;
     return res;
 }
 
