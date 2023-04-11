@@ -7,7 +7,8 @@ use actix_web::{
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::sync::{Arc, Mutex};
-use tokio_postgres::{connect, Client, Error, NoTls};
+use tokio_postgres::{connect, Client, Error, NoTls, Row, types::{ToSql}};
+use core::marker::{Sync};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryRequest {
@@ -16,7 +17,7 @@ pub struct QueryRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryResponse {
-    pub response: Vec<query::query::SqlQuery>,
+    pub response: Vec<Result<Vec<Row>, Error>>,//Vec<query::query::SqlQuery>,
 }
 
 pub struct DBConfig {
@@ -74,6 +75,12 @@ impl TaoServer {
         });
         return Some(client);
     }
+    pub async fn db_execute(&self, sql_query: query::query::SqlQuery) -> Result<Vec<Row>, Error> {
+        let client = self.db_connect().await.unwrap();
+        let query_params: Vec<_> = sql_query.params.iter().map(|x| x as &(dyn ToSql + Sync)).collect();
+        let res = client.query(&sql_query.query, query_params.as_slice()).await?;
+        return Ok(res);
+    }
 
     pub async fn pipeline(
         &self,
@@ -86,10 +93,13 @@ impl TaoServer {
             .iter()
             .map(|q| query::translator::translate(q.clone()))
             .collect::<Vec<query::query::SqlQuery>>();
+        let results = sql_queries
+            .iter()
+            .map(|q| self.db_execute(q))
+            .collect::<Vec<Result<Vec<Row>, Error>>>();
 
-        self.db_client().await;
         return HttpResponse::Ok().json(&QueryResponse {
-            response: sql_queries,
+            response: results,
         });
     }
 

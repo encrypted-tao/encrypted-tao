@@ -40,7 +40,7 @@ fn translate_assoc_add(args: TaoArgs) -> SqlQuery {
                 atype.to_string(),
                 id2.to_string(),
                 t.to_string(),
-                data,
+                data.to_string(),
             ];
 
             return SqlQuery {
