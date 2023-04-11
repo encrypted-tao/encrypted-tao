@@ -18,7 +18,8 @@ pub struct QueryRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryResponse {
-    pub response: Vec<query::query::SqlQuery>,
+    pub response: Vec<Vec<query::results::DBRow>>,
+    //    pub response: Vec<query::query::SqlQuery>,
 }
 
 pub struct DBConfig {
@@ -118,9 +119,7 @@ impl TaoServer {
         )
         .await;
 
-        return HttpResponse::Ok().json(&QueryResponse {
-            response: sql_queries,
-        });
+        return HttpResponse::Ok().json(&QueryResponse { response: results });
         // return HttpResponse::Ok().json(sql_queries.collect::<Vec<query::query::SqlQuery>>());
     }
 
