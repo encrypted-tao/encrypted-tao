@@ -36,6 +36,36 @@ pub mod ope {
     const DEFAULT_OUTPUT_RANGE_START: u64 = 1;
     const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
     
+    pub struct PRNG {
+        tape: u64,
+    }
+    impl PRNG {
+        
+        /* PRNG
+         *      A pseudo-random number generator using
+         *      the tape as a source of randomness
+         */
+        
+        pub fn draw(&mut self) -> u64 {
+
+            let coins: Vec<char> = self.tape.chars().collect();
+           
+            // sanity check
+            assert_eq!(coins.len(), 32);
+            
+            let tmp = 0;
+
+            for coin in &mut coins {
+
+                tmp = (tmp << 1) | coin;
+                
+            }
+
+            let ret = 1.0 * tmp / (DEFAULT_OUTPUT_RANGE_END);
+
+            return  ret;
+
+    }
     pub struct Range {
         start: u64,
         end: u64,
@@ -86,12 +116,11 @@ pub mod ope {
                 return in_range.start + index - 1;
             
             }
-            /*
 
             //let hypergeo = Hypergeometric::new(index, in_size, out_size - in_size).unwrap();
 
-            if index > 0 {
-
+            if index > 10 {
+                
                 
             } else {
 
@@ -104,7 +133,7 @@ pub mod ope {
             } else {
 
                 return in_range.start + sample - 1;
-            }*/
+            }
 
         }
         /*
