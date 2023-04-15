@@ -103,7 +103,7 @@ pub mod ope {
 
     impl OPE {
 
-        pub fn log_gamma(x: f64) -> f64 {
+        pub fn log_gamma(&mut self, x: f64) -> f64 {
             
             let v = vec![8.333333333333333e-02, -2.777777777777778e-03,
              7.936507936507937e-04, -5.952380952380952e-04,
@@ -161,8 +161,6 @@ pub mod ope {
             
             }
 
-            //let hypergeo = Hypergeometric::new(index, in_size, out_size - in_size).unwrap();
-
             let mut sample = 0;
 
             if index.gt(10) {
@@ -181,11 +179,49 @@ pub mod ope {
                 let d7 = ((size - min) * index * d4 * d5 / (size - 1) + 0.5).sqrt();
                 let d8 = d1 * d7 + d2;
                 let d9 = ((min_sample + 1) * (min + 1) / (size + 2)).floor();
-                let d10 =
+                let d10 = self.log_gamma(d9+1) + self.log_gamma(min-d9+1) + self.log_gamma(min_sample-d9+1) + self.log_gamma(max-min_sample+d9+1);
+                let d11 =  cmp::min(cmp::min(min_sample, min) + 1.0, (d6 + 16 * d7).floor());
 
+                let mut Z = 0;
+
+                while true {
+                    let X = prng.draw();
+                    let Y = prng.draw();
+
+                    let W = d6 + d8 * (Y - 0.5) / X;
+
+                    if W.lt(0.0) || W.ge(d11) {
+                        continue;
+                    }
+
+                    Z = W.floor();
+                    let T = d10 - (self.log_gamma(Z+1) + self.log_gamma(min-Z+1) + self.log_gamma(min_sample-Z+1) + self.log_gamma(max-min_sample+Z+1));
+
+                    if (X*(4.0-X)-3.0).le(T) {
+                        break;
+                    }
+
+                    if (X*(X-T)).ge(1) {
+                        continue;
+                    }
+
+                    if (2.0 * X.log()).le(T) {
+                        break;
+                    }
+
+                }
+
+                sample = z;
+
+                if in_size.gt((out_size - in_size)) {
+                    sample = min_sample - Z;
+                }
+
+                if min_sample.lt(index) {
+                    sample = in_size - Z;
+                }   
 
                 
-
                 
             } else {
                 
