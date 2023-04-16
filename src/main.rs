@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 mod ope;
-=======
 mod tao;
->>>>>>> 5eb0e4cb7fba849e5cca6a3cea1a6059d2f526d2
 
 fn main() {
     let qs = tao::parser::parse(

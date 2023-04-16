@@ -20,7 +20,7 @@ extern crate sha2;
 
 pub mod ope {
    
-    use hmac::{Mac, Hmac};
+    use hmac::Hmac;
     use sha2::Sha256;
     use aes::Aes256;
     use aes::cipher::{
@@ -28,20 +28,19 @@ pub mod ope {
     use aes_prng::AesRng;
     use std::io::{Read, Write, Cursor};
     use std::fs::File;
-    use rand::{Rng, thread_rng, SeedableRng};
-    use rand::distributions::Uniform; // https://docs.rs/rand/latest/rand/distributions/uniform/index.html
-    use rand_distr::{Distribution, Hypergeometric}; // https://rust-random.github.io/rand/rand_distr/struct.Hypergeometric.html
-    use generic_array::{GenericArray, arr};
+    use generic_array::{GenericArray, arr, ArrayLength};
     use std::cmp;
+    use generic_array::typenum::{UInt, Integer};
 
     const DEFAULT_INPUT_RANGE_START: u64 = 0;
     const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
     const DEFAULT_OUTPUT_RANGE_START: u64 = 1;
     const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
-    
+   
     pub struct PRNG {
-        tape: u64,
+        tape: [u8; 32],
     }
+    
     impl PRNG {
         
         /* PRNG
@@ -49,24 +48,26 @@ pub mod ope {
          *      the tape as a source of randomness
          */
         
-        pub fn draw(&mut self) -> u64 {
+        pub fn draw(&mut self) -> f64 {
 
-            let coins: Vec<char> = self.tape.chars().collect();
+            //let str_tape = self.tape.to_string();
+
+            //let coins: Vec<char> = str_tape.chars().collect();
            
             // sanity check
-            assert_eq!(coins.len(), 32);
+            assert_eq!(self.tape.len(), 32);
             
             let tmp = 0;
 
-            for coin in &mut coins {
+            for coin in self.tape {
 
                 tmp = (tmp << 1) | coin;
                 
             }
 
-            let ret = 1.0 * tmp / (DEFAULT_OUTPUT_RANGE_END);
+            let ret = 1.0 * tmp as f64 / (DEFAULT_OUTPUT_RANGE_END as f64);
 
-            return  ret;
+            return ret;
         }
 
     }
@@ -93,7 +94,9 @@ pub mod ope {
         pub fn copy(&mut self) -> Range {
 
             return Range {start:self.start, end:self.end};
+        }
     }
+
 
     pub struct OPE {
         key: String,
@@ -112,156 +115,157 @@ pub mod ope {
              1.796443723688307e-01, -1.39243221690590e+00];
 
             let mut x0 = x * 1.0;
-            let mut n = 0;
+            let mut n = 0.0;
 
-            if x0.eq(1.0) || x0.eq(2.0) {
+            if x0.eq(&1.0) || x0.eq(&2.0) {
                 return 0.0;
             }
 
-            else if x.le(7.0) {
-                n = 7 - x as i64;
+            else if x.le(&7.0) {
+                n = 7.0 - x;
                 x0 = (x * 1.0) + n;
             }
 
             let x2 = 1.0 / (x0 * x0);
-            let xp = 2 * f64::consts::PI;
+            let xp: f64 = 2.0 * std::f64::consts::PI;
             let mut gl0 = v[9];
 
-            for i in -1..8.rev() {
+            for i in (0..9).rev() {
                 gl0 *= x2;
-                gl0 += a[i];
+                gl0 += v[i-1];
             }
-            let mut gl = gl0 / x0 + 0.5 * xp.log() + (x0 - 0.5) * x0.log() - x0;
+            let mut gl = gl0 / x0 + 0.5 * xp.log(std::f64::consts::E /* f64 */) + (x0 - 0.5) * x0.log(std::f64::consts::E /* f64 */) - x0;
 
-            if x.le(7.0) {
-                for i in 1..(n+1) {
-                    gl -= (x0 - 1.0).log();
-                    x0 -= 1;
+            if x.le(&7.0) {
+                for i in 1..((n+1.0) as i16) {
+                    gl -= (x0 - 1.0).log(std::f64::consts::E /* f64 */);
+                    x0 -= 1.0;
                 }
             }
             return gl;
         }
+
         /*
          * hypergeo_sample
          *      Sample hypergeometric distribution using coins
          *      as a source of 'randomness'
          */
-        pub fn hypergeo_sample(&mut self, in_range: Range, out_range: Range, seed: u64, coins: &[u8]) -> u64 {
+        pub fn hypergeo_sample(&mut self, in_range: Range, out_range: Range, seed: u64, coins:[u8; 32]) -> u64 {
             
    
-            let pnrg = PNRG { coins: coins };
+            let prng = PRNG { tape: coins };
             let in_size = in_range.size();
             let out_size = out_range.size();
 
-            let index = seed - out_range.start + 1;
+            let index: f64 = (seed - out_range.start + 1) as f64;
 
-            if in_size == out_size {
+            if in_size.eq(&out_size) {
                 
-                return in_range.start + index - 1;
+                return in_range.start + (index as u64) - 1;
             
             }
 
-            let mut sample = 0;
+            let mut sample = 0.0;
 
-            if index.gt(10) {
+            if index.gt(&10.0) {
 
                 let d1: f64 = 1.7155277699214135;
                 let d2: f64 = 0.8989161620588988;
 
-                let min: f64 = cmp::min(in_size, (out_size - in_size));
-                let size = in_size + (out_size - in_size);
-                let max: f64 = cmp::max(in_size, (out_size - in_size));
+                let min: f64 = cmp::min(in_size, out_size - in_size) as f64;
+                let size: f64 = (in_size + (out_size - in_size)) as f64;
+                let max: f64 = cmp::max(in_size, out_size - in_size) as f64;
 
-                let min_sample = cmp::min(index, size - sample);
+                let min_sample: f64 = cmp::min(index as i32, (size - index) as i32) as f64;
                 let d4: f64 = min as f64 / size;
-                let d5 = 1.0 - d4;
-                let d6 = min_sample * d4 + 0.5;
-                let d7 = ((size - min) * index * d4 * d5 / (size - 1) + 0.5).sqrt();
-                let d8 = d1 * d7 + d2;
-                let d9 = ((min_sample + 1) * (min + 1) / (size + 2)).floor();
-                let d10 = self.log_gamma(d9+1) + self.log_gamma(min-d9+1) + self.log_gamma(min_sample-d9+1) + self.log_gamma(max-min_sample+d9+1);
-                let d11 =  cmp::min(cmp::min(min_sample, min) + 1.0, (d6 + 16 * d7).floor());
+                let d5: f64 = 1.0 - d4;
+                let d6: f64 = min_sample * d4 + 0.5;
+                let d7: f64 = ((size - min) * index as f64 * d4 * d5 / (size - 1.0) + 0.5).sqrt();
+                let d8: f64 = d1 * d7 + d2;
+                let d9: f64 = ((min_sample + 1.0) * (min + 1.0) / (size + 2.0)).floor();
+                let d10: f64 = self.log_gamma(d9+1.0) + self.log_gamma(min-d9+1.0) + self.log_gamma((min_sample-d9+1.0) as f64) + self.log_gamma((max-min_sample+d9+1.0) as f64);
+                let d11: f64 =  cmp::min((cmp::min(min_sample as u64, min as u64) + 1) as u64, (d6 + 16.0 * d7 as f64).floor() as u64) as f64;
 
-                let mut Z = 0;
+                let mut Z: f64 = 0.0;
 
-                while true {
+                loop {
                     let X = prng.draw();
                     let Y = prng.draw();
 
                     let W = d6 + d8 * (Y - 0.5) / X;
 
-                    if W.lt(0.0) || W.ge(d11) {
+                    if W.lt(&0.0) || W.ge(&d11) {
                         continue;
                     }
 
                     Z = W.floor();
-                    let T = d10 - (self.log_gamma(Z+1) + self.log_gamma(min-Z+1) + self.log_gamma(min_sample-Z+1) + self.log_gamma(max-min_sample+Z+1));
+                    let T = d10 - (self.log_gamma(Z+1.0) + self.log_gamma(min-Z+1.0) + self.log_gamma((min_sample-Z+1.0) as f64) + self.log_gamma(max-min_sample as f64+Z+1.0));
 
-                    if (X*(4.0-X)-3.0).le(T) {
+                    if (X*(4.0-X)-3.0).le(&T) {
                         break;
                     }
 
-                    if (X*(X-T)).ge(1) {
+                    if (X*(X-T)).ge(&1.0) {
                         continue;
                     }
 
-                    if (2.0 * X.log()).le(T) {
+                    if (2.0 * X.log(std::f64::consts::E /* f64 */)).le(&T) {
                         break;
                     }
 
                 }
 
-                sample = z;
+                sample = Z;
 
-                if in_size.gt((out_size - in_size)) {
+                if in_size.gt(&(out_size - in_size)) {
                     sample = min_sample - Z;
                 }
 
-                if min_sample.lt(index) {
-                    sample = in_size - Z;
+                if min_sample.lt(&index) {
+                    sample = (in_size - (Z as u64)) as f64;
                 }   
 
                 
                 
             } else {
                 
-                let d1 = in_size + (out_size - in_size) - index;
-                let d2: f64 = cmp::min(in_size, (out_size - in_size));
+                let d1: f64 = (in_size + (out_size - in_size) - (index as u64)) as f64;
+                let d2: f64 = cmp::min(in_size, out_size - in_size) as f64;
 
                 let Y = d2;
                 let K = index;
 
-                while Y.gt(0.0)  {
+                while Y.gt(&0.0)  {
 
                     let U = prng.draw();
                     Y -= (U + Y / (d1 + K)).floor();
-                    K -= 1;
+                    K -= 1.0;
 
-                    if K == 0 {
+                    if K == 0.0 {
                         break;
                     }
 
                 }
                 let Z = d2 - Y;
 
-                if in_size.gt((out_size - in_size)) {
+                if in_size.gt(&(out_size - in_size)) {
                 
-                    sample = index - Z;
+                    sample = index - Z as f64;
 
                 }
                 
-                sample = Z;
+                sample = Z as f64;
 
 
             }
 
-            if sample == 0 {
+            if sample == 0.0 {
                 
                 return in_range.start;
 
             } else {
 
-                return in_range.start + sample - 1;
+                return in_range.start + (sample - 1.0) as u64;
             }
 
         }
@@ -270,20 +274,20 @@ pub mod ope {
          *      Sample uniform distribution using coins
          *      as a source of 'randomness'
          */
-        pub fn uniform_sample(&mut self, in_range: u64, coins: &[u8]) -> u64 {
+        pub fn uniform_sample(&mut self, in_range: Range, coins: [u8; 32]) -> u64 {
        
            let cur = in_range.copy();
            let mut index = 0;
            
            while cur.size() > 1 {
                
-               let mid = ((cur.start + cur.end) / 2).floor();
+               let mid = ((cur.start + cur.end) as i64 / 2) as u64;
                
                if coins[index] == 0 {
                    cur.end = mid;
                 }
     
-               if coins[index == 1] {
+               if coins[index] == 1 {
                    cur.start = mid + 1;
                }
 
@@ -394,20 +398,24 @@ pub mod ope {
          * tape_gen(self, data)
          *  Return: bit string of data
          */
-        pub fn tape_gen(&mut self, data: u64) -> &[u8] {
+        pub fn tape_gen(&mut self, data: u64) -> [u8; 32]  {
             
-            let mut data_str = GenericArray::from(data.to_string().as_bytes());
-            type HmacSha256 = Hmac<Sha256>;
-            let mut hmac_obj = HmacSha256::new_from_slice(self.key.as_bytes());
-            let aes_cipher = aes::Aes256::new(&mut hmac_obj.result());
-
-            
-            // sanity check
-            assert_eq!(hmac_obj.digest_size, 32); 
-
-           aes_cipher.encrypt_block(&mut data_str);
+            let mut data_str = data.to_string().as_bytes();
         
-           return &data_str;
+            type HmacSha256 = Hmac<Sha256>;
+            let mut hmac_obj = HmacSha256::new_from_slice(self.key.as_bytes()).unwrap();
+            hmac_obj.update(data);
+
+            let hmac_res = hmac_obj.finalize();
+            
+
+            let aes_cipher = aes::Aes256::new(&mut hmac_res.into_bytes());
+
+
+            aes_cipher.encrypt_block(&mut data_str);
+            
+
+            return *data_str;
 
         }
 
