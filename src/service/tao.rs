@@ -64,7 +64,7 @@ impl TaoServer {
         TaoServer { cache, db_config }
     }
 
-    pub async fn db_connect(&self) -> Option<Client> {
+    async fn db_connect(&self) -> Option<Client> {
         let db_url = format!(
             "host={} user={} password={} dbname={} port={}",
             self.db_config.host,
@@ -82,79 +82,20 @@ impl TaoServer {
         return Some(client);
     }
 
-    pub async fn db_execute(
+    async fn db_execute(
         &self,
         sql_query: query::query::SqlQuery,
     ) -> Option<Vec<query::results::DBRow>> {
         let client = self.db_connect().await.unwrap();
-        /*
-        let resp = match sql_query.op {
-            query::query::TaoOp::ObjAdd => {
-                let (arg1, arg2, arg3) = match sql_query.params {
-                    query::query::TaoArgs::ObjAddArgs { arg1: a, arg2: b, arg3: c } => (a, b, c),
-                    _ => panic!("objadd args"),
-                };
-                &client.query(
-                    "
-                    INSERT INTO Objects (id, otype, data) \
-                    VALUES ($1, $2, $3)
-                    ",
-                    &[&arg1, &arg2, &arg3]
-                ).await.ok()?
-            },
-            query::query::TaoOp::ObjGet => {
-                let arg = match sql_query.params {
-                    query::query::TaoArgs::ObjGetArgs { arg1: a } => a,
-                    _ => panic!("objadd args"),
-                };
-                &client.query(
-                    "
-                    SELECT * FROM Objects WHERE id = $1
-                    ",
-                    &[&arg]
-                ).await.ok()?
-            },
-            _ => panic!("not yet"),
-        };
-        */
-        /*
-        let params = match sql_query.op {
-            query::query::TaoOp::ObjAdd => {
-                let (arg1, arg2, arg3) = match sql_query.params {
-                    query::query::TaoArgs::ObjAddArgs { arg1: a, arg2: b, arg3: c } => (a, b, c),
-                    _ => panic!("objadd args"),
-                };
-                vec![&arg1 as &dyn ToSql, &arg2 as &dyn ToSql, &arg3.as_str() as &dyn ToSql]
-            },
-            query::query::TaoOp::ObjGet => {
-                let arg = match sql_query.params {
-                    query::query::TaoArgs::ObjGetArgs { arg1: a } => a,
-                    _ => panic!("objadd args"),
-                };
-                vec![&arg as &dyn ToSql]
-            },
-            _ => panic!("not yet"),
-        };
-        */
-        /*
-        let resp = resp.await.ok()?; 
-        println!("{:#?}", resp);
-        */
+
         let larg = match sql_query.params {
             query::query::TaoArgs::ObjGetArgs { arg1: a } => a,
             _ => panic!("objadd args"),
         };
-        let args = TestArgs {
-            arg: larg
-        };
 
         let resp = &client
-            .query(
-                "
-                SELECT * FROM Objects WHERE id = $1
-                ",
-                &[&larg],
-            ).await.unwrap();
+            .query(&sql_query.query, &[&larg])
+            .await.unwrap();
         
         println!("{:#?}", resp);
         let res = query::results::deserialize_rows(&sql_query.op, resp);
@@ -183,19 +124,86 @@ impl TaoServer {
         return HttpResponse::Ok().json(&QueryResponse { response: results });
     }
 
-    pub async fn db_client(&self) -> Result<(), Error> {
+    async fn obj_get(
+        &self,
+        sql_query: query::query::SqlQuery,
+    ) -> Option<Vec<query::results::DBRow>> {
         let client = self.db_connect().await.unwrap();
-        let query1 = &client
-            .query(
-                "
-                SELECT * From Objects
-                ",
-                &[],
-            )
-            .await?;
-        println!("{:#?}", query1);
 
-        return Ok(());
+        let id = match sql_query.params {
+            query::query::TaoArgs::ObjGetArgs { arg1: a } => a,
+            _ => panic!("Incorrect args to obj get"),
+        };
+
+        let resp = &client
+            .query(&sql_query.query, &[&id])
+            .await.unwrap();
+        
+        println!("{:#?}", resp);
+        let res = query::results::deserialize_rows(&sql_query.op, resp);
+        return Some(res);
+    }
+
+    async fn obj_add(
+        &self,
+        sql_query: query::query::SqlQuery,
+    ) -> Option<Vec<query::results::DBRow>> {
+        let client = self.db_connect().await.unwrap();
+
+        let (id, ty, data) = match sql_query.params {
+            query::query::TaoArgs::ObjAddArgs { arg1: a, arg2: b, arg3: c } => (a, b, c),
+            _ => panic!("Incorrect args to obj add"),
+        };
+
+        let resp = &client
+            .query(&sql_query.query, &[&id, &ty.as_str(), &c.as_str()])
+            .await.unwrap();
+        
+        println!("{:#?}", resp);
+        let res = query::results::deserialize_rows(&sql_query.op, resp);
+        return Some(res);
+    }
+
+    async fn assoc_add(
+        &self,
+        sql_query: query::query::SqlQuery,
+    ) -> Option<Vec<query::results::DBRow>> {
+        let client = self.db_connect().await.unwrap();
+
+        let (id, ty, id2, time, data) = match sql_query.params {
+            query::query::TaoArgs::AssocAddArgs { arg1: a, arg2: b, arg3: c, arg4: d, arg5: e } => (a, b, c, d, e),
+            // query::query::TaoArgs::AssocArgsEncryped ...
+            _ => panic!("Incorrect args to assoc add"),
+        };
+
+        let resp = &client
+            .query(&sql_query.query, &[&id1, &ty.as_str(), &id2, &time, &data.as_str()])
+            .await.unwrap();
+        
+        println!("{:#?}", resp);
+        let res = query::results::deserialize_rows(&sql_query.op, resp);
+        return Some(res);
+    }
+
+    async fn assoc_add(
+        &self,
+        sql_query: query::query::SqlQuery,
+    ) -> Option<Vec<query::results::DBRow>> {
+        let client = self.db_connect().await.unwrap();
+
+        let (id, ty, id2, time, data) = match sql_query.params {
+            query::query::TaoArgs::AssocGetArgs { arg1: a, arg2: b, arg3: c, arg4: d, arg5: e } => (a, b, c, d, e),
+            // query::query::TaoArgs::AssocArgsEncryped ...
+            _ => panic!("Incorrect args to assoc get"),
+        };
+
+        let resp = &client
+            .query(&sql_query.query, &[&id1, &ty.as_str(), &id2, &time, &data.as_str()])
+            .await.unwrap();
+        
+        println!("{:#?}", resp);
+        let res = query::results::deserialize_rows(&sql_query.op, resp);
+        return Some(res);
     }
 }
 
