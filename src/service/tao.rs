@@ -53,6 +53,10 @@ pub struct TaoServer {
     pub db_config: DBConfig,
 }
 
+pub struct TestArgs {
+    arg: i32,
+}
+
 impl TaoServer {
     pub fn new(env_path: String) -> Self {
         let cache = Arc::new(Mutex::new(vec![]));
@@ -72,7 +76,7 @@ impl TaoServer {
         let (client, conn) = connect(db_url.as_str(), NoTls).await.unwrap();
         tokio::spawn(async move {
             if let Err(e) = conn.await {
-                eprintln!("connection error: {}", e);
+                println!("connection error: {}", e);
             }
         });
         return Some(client);
@@ -83,21 +87,78 @@ impl TaoServer {
         sql_query: query::query::SqlQuery,
     ) -> Option<Vec<query::results::DBRow>> {
         let client = self.db_connect().await.unwrap();
-        let query_params: Vec<_> = sql_query
-            .params
-            .iter()
-            .map(|x| x as &(dyn ToSql + Sync))
-            .collect();
-        let resp = client
-            .query(&sql_query.query, query_params.as_slice())
-            .await;
-        match resp {
-            Ok(r) => {
-                let res = query::results::deserialize_rows(&sql_query.op, r);
-                Some(res)
-            }
-            Error => panic!("oh no!"),
-        }
+        /*
+        let resp = match sql_query.op {
+            query::query::TaoOp::ObjAdd => {
+                let (arg1, arg2, arg3) = match sql_query.params {
+                    query::query::TaoArgs::ObjAddArgs { arg1: a, arg2: b, arg3: c } => (a, b, c),
+                    _ => panic!("objadd args"),
+                };
+                &client.query(
+                    "
+                    INSERT INTO Objects (id, otype, data) \
+                    VALUES ($1, $2, $3)
+                    ",
+                    &[&arg1, &arg2, &arg3]
+                ).await.ok()?
+            },
+            query::query::TaoOp::ObjGet => {
+                let arg = match sql_query.params {
+                    query::query::TaoArgs::ObjGetArgs { arg1: a } => a,
+                    _ => panic!("objadd args"),
+                };
+                &client.query(
+                    "
+                    SELECT * FROM Objects WHERE id = $1
+                    ",
+                    &[&arg]
+                ).await.ok()?
+            },
+            _ => panic!("not yet"),
+        };
+        */
+        /*
+        let params = match sql_query.op {
+            query::query::TaoOp::ObjAdd => {
+                let (arg1, arg2, arg3) = match sql_query.params {
+                    query::query::TaoArgs::ObjAddArgs { arg1: a, arg2: b, arg3: c } => (a, b, c),
+                    _ => panic!("objadd args"),
+                };
+                vec![&arg1 as &dyn ToSql, &arg2 as &dyn ToSql, &arg3.as_str() as &dyn ToSql]
+            },
+            query::query::TaoOp::ObjGet => {
+                let arg = match sql_query.params {
+                    query::query::TaoArgs::ObjGetArgs { arg1: a } => a,
+                    _ => panic!("objadd args"),
+                };
+                vec![&arg as &dyn ToSql]
+            },
+            _ => panic!("not yet"),
+        };
+        */
+        /*
+        let resp = resp.await.ok()?; 
+        println!("{:#?}", resp);
+        */
+        let larg = match sql_query.params {
+            query::query::TaoArgs::ObjGetArgs { arg1: a } => a,
+            _ => panic!("objadd args"),
+        };
+        let args = TestArgs {
+            arg: larg
+        };
+
+        let resp = &client
+            .query(
+                "
+                SELECT * FROM Objects WHERE id = $1
+                ",
+                &[&larg],
+            ).await.unwrap();
+        
+        println!("{:#?}", resp);
+        let res = query::results::deserialize_rows(&sql_query.op, resp);
+        return Some(res);
     }
 
     pub async fn pipeline(
@@ -120,7 +181,6 @@ impl TaoServer {
         .await;
 
         return HttpResponse::Ok().json(&QueryResponse { response: results });
-        // return HttpResponse::Ok().json(sql_queries.collect::<Vec<query::query::SqlQuery>>());
     }
 
     pub async fn db_client(&self) -> Result<(), Error> {

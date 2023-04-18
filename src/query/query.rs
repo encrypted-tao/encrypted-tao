@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
+use core::marker::Sync;
+use tokio_postgres::{connect, types::ToSql, Client, Error, NoTls, Row};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TaoOp {
@@ -98,8 +100,8 @@ pub enum Arg {
     ObjType(ObjType),
     AssocType(AssocType),
     Str(String),
-    Num(u64),
-    UID(u64),
+    Num(i32),
+    UID(i32),
     UIDSet(Vec<Arg>),
 }
 
@@ -115,6 +117,28 @@ impl fmt::Display for Arg {
         }
     }
 }
+
+/*
+pub fn arg_to_sql_param(a : &Arg) -> &'static (dyn ToSql + Sync) {
+    let const sql_a = match a {
+        Arg::ObjType(ot) => &ot.to_string() as &(dyn ToSql + Sync),
+        Arg::AssocType(at) => &at.to_string() as &(dyn ToSql + Sync),
+        Arg::Str(s) => &s as &(dyn ToSql + Sync),
+        Arg::Num(n) => &n as &(dyn ToSql + Sync),
+        Arg::UID(n) => &n as &(dyn ToSql + Sync),
+        _ => panic!("not supported"),
+        /* Arg::UIDSet(ns) => {
+            let inner = ns.iter().map(
+                |x| match x {
+                    Arg::UID(n) => &n as &(dyn ToSql + Sync),
+                    _ => panic!("Unexpected type"),
+            }).collect::<Vec<_>>().as_slice();
+            &inner as &(dyn ToSql + Sync)
+        } */
+    };
+    return sql_a;
+}
+*/
 
 #[derive(Debug, Clone)]
 pub enum TaoArgs {
@@ -143,6 +167,14 @@ pub enum TaoArgs {
         arg4: Arg,
         arg5: Arg,
     },
+    ObjGetArgs {
+        arg1: i32,
+    },
+    ObjAddArgs {
+        arg1: i32,
+        arg2: String,
+        arg3: String,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -151,9 +183,9 @@ pub struct Query {
     pub args: TaoArgs,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct SqlQuery {
     pub op: TaoOp,
     pub query: String,
-    pub params: Vec<String>,
+    pub params: TaoArgs,
 }

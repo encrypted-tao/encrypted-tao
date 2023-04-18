@@ -176,21 +176,22 @@ fn parse_tao_args(
         }
         TaoOp::ObjAdd => {
             let (a1, a2, a3) = unwrap_three_args(args);
-            let id = Arg::UID(a1.parse().unwrap());
+            let id: i32 = a1.parse().unwrap();
             let otype = Arg::ObjType(ObjType::from_str(a2).unwrap());
-            let data = Arg::Str(a3.to_string());
+            println!("{:#?}\n", a3);
+            let data = a3.to_string();
 
-            return TaoArgs::ThreeArgs {
+            return TaoArgs::ObjAddArgs {
                 arg1: id,
-                arg2: otype,
+                arg2: otype.to_string(),
                 arg3: data,
             };
         }
         TaoOp::ObjGet => {
             // let mut args = args.into_inner();
-            let id = Arg::UID(args.next().unwrap().as_str().parse().unwrap());
+            let id: i32 = args.next().unwrap().as_str().parse().unwrap();
 
-            return TaoArgs::OneArgs { arg1: id };
+            return TaoArgs::ObjGetArgs { arg1: id };
         }
         TaoOp::ObjDelete => {
             // let mut args = args.into_inner();
@@ -230,8 +231,11 @@ fn unwrap_three_args(
     // let mut args = args.into_inner();
     let a1 = args.next().unwrap().as_str();
     let a2 = args.next().unwrap().as_str();
-    let a3 = args.next().unwrap().as_str();
-
+    let a3t = args.next().unwrap();
+    let a3 = match a3t.as_rule() {
+        Rule::String => a3t.into_inner().next().unwrap().as_str(),
+        _ => a3t.as_str(),
+    };
     return (a1, a2, a3);
 }
 
@@ -255,7 +259,12 @@ fn unwrap_five_args(
     let a2 = args.next().unwrap().as_str();
     let a3 = args.next().unwrap().as_str();
     let a4 = args.next().unwrap().as_str();
-    let a5 = args.next().unwrap().as_str();
+    let a5t = args.next().unwrap();
+
+    let a5 = match a5t.as_rule() {
+        Rule::String => a5t.into_inner().next().unwrap().as_str(),
+        _ => a5t.as_str(),
+    };
 
     return (a1, a2, a3, a4, a5);
 }

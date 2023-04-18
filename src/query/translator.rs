@@ -1,14 +1,15 @@
 use crate::query::query::{Arg, Query, SqlQuery, TaoArgs, TaoOp};
 use serde::{Deserialize, Serialize};
+use tokio_postgres::types::ToSql;
 
 pub fn translate(query: Query) -> SqlQuery {
     let query = match query.op {
-        TaoOp::AssocAdd => translate_assoc_add(query.args),
-        TaoOp::AssocGet => translate_assoc_get(query.args),
-        TaoOp::AssocRangeGet => translate_assoc_range_get(query.args),
-        TaoOp::AssocCount => translate_assoc_count(query.args),
-        TaoOp::AssocRange => translate_assoc_range(query.args),
-        TaoOp::AssocTimeRange => translate_assoc_time_range(query.args),
+        TaoOp::AssocAdd => panic!("no"), 
+        TaoOp::AssocGet => panic!("no"),
+        TaoOp::AssocRangeGet => panic!("no"),
+        TaoOp::AssocCount => panic!("no"),
+        TaoOp::AssocRange => panic!("no"),
+        TaoOp::AssocTimeRange => panic!("no"),
         TaoOp::AssocDelete => panic!("Not supported yet!"),
         TaoOp::AssocChangeType => panic!("Not supported yet!"),
         TaoOp::ObjAdd => translate_obj_add(query.args),
@@ -19,34 +20,35 @@ pub fn translate(query: Query) -> SqlQuery {
     return query;
 }
 
+/*
 fn translate_assoc_add(args: TaoArgs) -> SqlQuery {
     match args {
         TaoArgs::FiveArgs {
             arg1: id1,
             arg2: atype,
             arg3: id2,
-            arg4: t,
+            arg4: time,
             arg5: data,
         } => {
             let query =
-                "INSERT INTO Associations(id1, atype, id2, time, data) \
+                "INSERT INTO Associations (id1, atype, id2, time, data) \
                          VALUES ($1, $2, $3, $4, $5)";
+            /*
             let data = match data {
                 Arg::Str(s) => s,
                 _ => panic!("Invalid data arg"),
             };
-            let params = vec![
-                id1.to_string(),
-                atype.to_string(),
-                id2.to_string(),
-                t.to_string(),
-                data.to_string(),
-            ];
+            */
+            let id1: ToSql = id1;
+            let atype: ToSql = atype.to_string().as_str();
+            let id2: ToSql = id2;
+            let time: ToSql = time;
+            let data: ToSql = data.as_str();
 
             return SqlQuery {
                 op: TaoOp::AssocAdd,
                 query: query.to_string(),
-                params: params,
+                params: &[&id1, &atype, &id2, &time, &data]
             };
         }
         _ => panic!("Invalid arguments to ASSOC ADD"),
@@ -60,7 +62,7 @@ fn translate_assoc_get(args: TaoArgs) -> SqlQuery {
             arg2: atype,
             arg3: idset,
         } => {
-            let idset = unwrap_idset(idset);
+            // let idset = unwrap_idset(idset);
             let in_set = format_in_clause(&idset, 2);
             let query = format!(
                 "SELECT * \
@@ -69,13 +71,20 @@ fn translate_assoc_get(args: TaoArgs) -> SqlQuery {
                  AND atype = $2 \
                  AND id2 in {in_set}"
             );
-            let mut params = vec![id.to_string(), atype.to_string()];
+            let mut params = vec![id, atype];
+            /*
             let idset_str =
-                idset.iter().map(|i| i.to_string()).collect::<Vec<String>>();
-            params.extend(idset_str);
+                idset.iter().map(|i| i).collect::<Vec<String>>();
+            */
+            // params.extend(idset_str);
+            let idsett = match idset {
+                Arg::UIDSet(us) => us,
+                _ => panic!("Expected UIDSet"),
+            };
+            params.extend(idsett);
             return SqlQuery {
                 op: TaoOp::AssocGet,
-                query: query,
+                query: query.to_string(),
                 params: params,
             };
         }
@@ -92,7 +101,7 @@ fn translate_assoc_range_get(args: TaoArgs) -> SqlQuery {
             arg4: hi,
             arg5: lo,
         } => {
-            let idset = unwrap_idset(idset);
+            // let idset = unwrap_idset(idset);
             let in_set = format_in_clause(&idset, 4);
             let query = format!(
                 "SELECT * \
@@ -105,17 +114,23 @@ fn translate_assoc_range_get(args: TaoArgs) -> SqlQuery {
             );
 
             let mut params = vec![
-                id.to_string(),
-                atype.to_string(),
-                lo.to_string(),
-                hi.to_string(),
+                id,
+                atype,
+                lo,
+                hi,
             ];
-            let idset_str =
-                idset.iter().map(|i| i.to_string()).collect::<Vec<String>>();
-            params.extend(idset_str);
+            /* let idset_str =
+                idset.iter().map(|i| i).collect::<Vec<String>>();
+            */
+            // params.extend(idset_str);
+            let idsett = match idset {
+                Arg::UIDSet(us) => us,
+                _ => panic!("Expected UIDSet"),
+            };
+            params.extend(idsett);
             return SqlQuery {
                 op: TaoOp::AssocRangeGet,
-                query: query,
+                query: query.to_string(),
                 params: params,
             };
         }
@@ -133,7 +148,7 @@ fn translate_assoc_count(args: TaoArgs) -> SqlQuery {
                          FROM Associations \
                          WHERE id1 = $1 \
                            AND atype = $2";
-            let params = vec![id.to_string(), atype.to_string()];
+            let params = vec![id, atype];
 
             return SqlQuery {
                 op: TaoOp::AssocCount,
@@ -157,7 +172,7 @@ fn translate_assoc_range(args: TaoArgs) -> SqlQuery {
                          FROM Associations \
                          WHERE id1 = $1 \
                            AND atype = $2";
-            let params = vec![id.to_string(), atype.to_string()];
+            let params = vec![id, atype];
 
             return SqlQuery {
                 op: TaoOp::AssocRange,
@@ -187,11 +202,11 @@ fn translate_assoc_time_range(args: TaoArgs) -> SqlQuery {
                          ORDER time DESC \
                          LIMIT $5";
             let params = vec![
-                id.to_string(),
-                atype.to_string(),
-                t1.to_string(),
-                t2.to_string(),
-                lim.to_string(),
+                id,
+                atype,
+                t1,
+                t2,
+                lim,
             ];
 
             return SqlQuery {
@@ -203,26 +218,29 @@ fn translate_assoc_time_range(args: TaoArgs) -> SqlQuery {
         _ => panic!("Invalid arguments to ASSOC RANGE"),
     }
 }
+*/
 
 fn translate_obj_add(args: TaoArgs) -> SqlQuery {
     match args {
-        TaoArgs::ThreeArgs {
-            arg1: id,
-            arg2: otype,
-            arg3: data,
+        TaoArgs::ObjAddArgs {
+            arg1: _,
+            arg2: _,
+            arg3: _,
         } => {
-            let query = "INSERT INTO Objects(id, otype, data) \
+            let query = "INSERT INTO Objects (id, otype, data) \
                          VALUES ($1, $2, $3)";
+
+            /*
             let data = match data {
                 Arg::Str(s) => s,
                 _ => panic!("Invalid data arg"),
             };
-            let params = vec![id.to_string(), otype.to_string(), data];
+            */
 
             return SqlQuery {
                 op: TaoOp::ObjAdd,
                 query: query.to_string(),
-                params: params,
+                params: args,
             };
         }
         _ => panic!("Invalid arguments to OBJ ADD"),
@@ -231,16 +249,15 @@ fn translate_obj_add(args: TaoArgs) -> SqlQuery {
 
 fn translate_obj_get(args: TaoArgs) -> SqlQuery {
     match args {
-        TaoArgs::OneArgs { arg1: id } => {
+        TaoArgs::ObjGetArgs { arg1: _ } => {
             let query = "SELECT * \
                          FROM Objects \
                          WHERE id = $1";
-            let params = vec![id.to_string()];
 
             return SqlQuery {
                 op: TaoOp::ObjGet,
                 query: query.to_string(),
-                params: params,
+                params: args,
             };
         }
         _ => panic!("Invalid arguments to OBJ ADD"),
@@ -248,7 +265,11 @@ fn translate_obj_get(args: TaoArgs) -> SqlQuery {
 }
 
 // some crusty helper functions
-fn format_in_clause(lst: &Vec<Arg>, offset: i32) -> String {
+fn format_in_clause(lst: &Arg, offset: i32) -> String {
+    let lst = match lst {
+        Arg::UIDSet(us) => us,
+        _ => panic!("Expected UIDSet"),
+    };
     let sz = lst.len() as i32;
     let indices = (1..(sz + 1))
         .map(|i| {

@@ -42,7 +42,7 @@ fn deserialize_row(op: &TaoOp, row: &Row) -> DBRow {
     }
 }
 
-pub fn deserialize_rows(op: &TaoOp, rows: Vec<Row>) -> Vec<DBRow> {
+pub fn deserialize_rows(op: &TaoOp, rows: &Vec<Row>) -> Vec<DBRow> {
     let res = rows
         .iter()
         .map(|r| deserialize_row(op, r))
