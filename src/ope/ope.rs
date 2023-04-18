@@ -68,10 +68,7 @@ pub mod ope {
 
             return Range {start:self.start, end:self.end};
         }
-        pub fn Copy(&mut self) -> Range {
-
-            return Range {start:self.start, end:self.end};
-        }
+       
     }
 
 
@@ -197,9 +194,11 @@ pub mod ope {
 
             let aes_cipher = aes_init(&mut hmac_res.into_bytes());
 
-            aes_cipher.encrypt_block(&mut GenericArray::from_slice(&data_bytes));
+            let mut data_arr = GenericArray::from_slice(&data_bytes).clone();
+            aes_cipher.encrypt_block(&mut data_arr);
+
             
-            return std::str::from_utf8(&data_bytes).unwrap().to_string();
+            return std::str::from_utf8(&data_arr).unwrap().to_string();
 
         }
 
@@ -219,7 +218,7 @@ mod tests {
     #[test]
     fn test_encrypt_decrypt() {
 
-        let test = OPE { key:"", in_range: Range {start:DEFAULT_INPUT_RANGE_START, end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: DEFAULT_OUTPUT_RANGE_START, end: DEFAULT_OUTPUT_RANGE_END}};
+        let test = OPE { key:"testing-key", in_range: Range {start:DEFAULT_INPUT_RANGE_START, end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: DEFAULT_OUTPUT_RANGE_START, end: DEFAULT_OUTPUT_RANGE_END}};
         
         return true; 
     }
