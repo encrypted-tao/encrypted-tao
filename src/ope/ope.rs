@@ -38,12 +38,11 @@ pub mod ope {
     use generic_array::{GenericArray, arr, ArrayLength};
     use std::cmp;
     use generic_array::typenum::{UInt, Integer};
-    //use utils::aes_init;
 
-    const DEFAULT_INPUT_RANGE_START: u64 = 0;
-    const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
-    const DEFAULT_OUTPUT_RANGE_START: u64 = 1;
-    const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
+    pub const DEFAULT_INPUT_RANGE_START: u64 = 0;
+    pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
+    pub const DEFAULT_OUTPUT_RANGE_START: u64 = 1;
+    pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
 
     pub struct Range {
         pub start: u64,
@@ -73,9 +72,9 @@ pub mod ope {
 
 
     pub struct OPE {
-        key: String,
-        in_range: Range,
-        out_range: Range,
+        pub key: String,
+        pub in_range: Range,
+        pub out_range: Range,
     }
 
     impl OPE {
@@ -137,8 +136,8 @@ pub mod ope {
 
         pub fn recursive_decrypt(&mut self, ciphertext: u64, in_start: u64, in_end:u64, out_start:u64, out_end:u64) -> u64 {
             
-               let mut in_range = Range {start: in_start, end: in_end};
-               let mut out_range = Range {start: out_start, end: out_end};
+                let mut in_range = Range {start: in_start, end: in_end};
+                let mut out_range = Range {start: out_start, end: out_end};
                 let in_size = in_range.size();
                 let out_size = out_range.size();
                 let in_edge = in_range.start - 1;
@@ -215,12 +214,28 @@ pub mod ope {
 mod tests {
     use super::*;
 
+    use crate::ope::ope::ope::OPE;
+    use crate::ope::ope::ope::Range;
+
+    pub const DEFAULT_INPUT_RANGE_START: u64 = 0;
+    pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
+    pub const DEFAULT_OUTPUT_RANGE_START: u64 = 1;
+    pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
+
+
     #[test]
     fn test_encrypt_decrypt() {
 
-        let test = OPE { key:"testing-key", in_range: Range {start:DEFAULT_INPUT_RANGE_START, end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: DEFAULT_OUTPUT_RANGE_START, end: DEFAULT_OUTPUT_RANGE_END}};
-        
-        return true; 
+        let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start:DEFAULT_INPUT_RANGE_START, end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: DEFAULT_OUTPUT_RANGE_START, end: DEFAULT_OUTPUT_RANGE_END}};
+        let plaintext: u64 = 2142314;
+       
+        let ciphertext = test.encrypt(plaintext);
+        let decrypt = test.decrypt(ciphertext);
+
+        println!("Ciphertext: {}\n", ciphertext.to_string());
+        println!("Decrypted: {}\n", decrypt.to_string());
+
+        assert_eq!(plaintext, decrypt);
     }
 
 }
