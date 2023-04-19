@@ -1,4 +1,5 @@
 /.env
+.DS_Store
 main.rs
 Cargo.lock
 /target
