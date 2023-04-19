@@ -5,10 +5,10 @@ use tokio_postgres::Row;
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DBRow {
     AssocRow {
-        id1: i32,
+        id1: i64,
         atype: String,
-        id2: i32,
-        t: i32,
+        id2: i64,
+        t: i64,
         data: String,
     },
     ObjRow {
@@ -16,7 +16,7 @@ pub enum DBRow {
         otype: String,
         data: String,
     },
-    Count(i32),
+    Count(i64),
     NoRes(bool),
 }
 
@@ -24,8 +24,7 @@ fn deserialize_row(op: &TaoOp, row: &Row) -> DBRow {
     match op {
         TaoOp::AssocGet
         | TaoOp::AssocRangeGet
-        | TaoOp::AssocRange
-        | TaoOp::AssocTimeRange => DBRow::AssocRow {
+        | TaoOp::AssocRange => DBRow::AssocRow {
             id1: row.get(0),
             atype: row.get(1),
             id2: row.get(2),
