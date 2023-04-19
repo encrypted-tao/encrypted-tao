@@ -1,4 +1,4 @@
-use crate::query::query::{Arg, AssocType, ObjType, Query, TaoArgs, TaoOp};
+use crate::query::query::{AssocType, ObjType, Query, TaoArgs, TaoOp};
 use pest::{self, Parser};
 use std::str::FromStr;
 
@@ -49,7 +49,6 @@ fn parse_tao_op(target: &str, op: &str) -> TaoOp {
         ("ASSOC", "RGET") => TaoOp::AssocRangeGet,
         ("ASSOC", "COUNT") => TaoOp::AssocCount,
         ("ASSOC", "RANGE") => TaoOp::AssocRange,
-        ("ASSOC", "TRANGE") => TaoOp::AssocTimeRange,
         ("OBJ", "ADD") => TaoOp::ObjAdd,
         ("OBJ", "GET") => TaoOp::ObjGet,
         ("OBJ", "DELETE") => TaoOp::ObjDelete,
@@ -66,144 +65,99 @@ fn parse_tao_args(
     match op {
         TaoOp::AssocAdd => {
             let (a1, a2, a3, a4, a5) = unwrap_five_args(args);
-            let id1 = Arg::UID(a1.parse().unwrap());
-            let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
-            let id2 = Arg::UID(a3.parse().unwrap());
-            let time = Arg::Num(a4.parse().unwrap());
-            let data = Arg::Str(a5.to_string());
+            let id1: i32 = a1.parse().unwrap();
+            let atype: String = a2.to_string();
+            let id2: i32 = a3.parse().unwrap();
+            let time: i32 = a4.parse().unwrap();
+            let data: String = a5.to_string();
 
-            return TaoArgs::FiveArgs {
-                arg1: id1,
-                arg2: atype,
-                arg3: id2,
-                arg4: time,
-                arg5: data,
+            return TaoArgs::AssocAddArgs {
+                id1: id1,
+                atype: atype,
+                id2: id2,
+                time: time,
+                data: data,
             };
-        }
-        TaoOp::AssocDelete => {
-            let (a1, a2, a3) = unwrap_three_args(args);
-            let id1 = Arg::UID(a1.parse().unwrap());
-            let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
-            let id2 = Arg::UID(a3.parse().unwrap());
-
-            return TaoArgs::ThreeArgs {
-                arg1: id1,
-                arg2: atype,
-                arg3: id2,
-            };
-        }
-        TaoOp::AssocChangeType => {
-            let (a1, a2, a3, a4) = unwrap_four_args(args);
-            let id1 = Arg::UID(a1.parse().unwrap());
-            let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
-            let id2 = Arg::UID(a3.parse().unwrap());
-            let natype = Arg::AssocType(AssocType::from_str(a4).unwrap());
-
-            return TaoArgs::FourArgs {
-                arg1: id1,
-                arg2: atype,
-                arg3: id2,
-                arg4: natype,
-            };
-        }
+        },
+        TaoOp::AssocDelete => panic!("Operation not supported"),
+        TaoOp::AssocChangeType => panic!("Operation not supported"),
         TaoOp::AssocGet => {
             let (a1, a2, a3) = unwrap_three_args(args);
-            let id1 = Arg::UID(a1.parse().unwrap());
-            let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
-            let idset = Arg::UIDSet(parse_id_set(a3));
+            let id: i32 = a1.parse().unwrap();
+            let atype = a2.to_string();
+            let idset = parse_id_set(a3);
 
-            return TaoArgs::ThreeArgs {
-                arg1: id1,
-                arg2: atype,
-                arg3: idset,
+            return TaoArgs::AssocGetArgs {
+                id: id,
+                atype: atype,
+                idset: idset,
             };
-        }
+        },
         TaoOp::AssocRangeGet => {
             let (a1, a2, a3, a4, a5) = unwrap_five_args(args);
-            let id1 = Arg::UID(a1.parse().unwrap());
-            let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
-            let idset = Arg::UIDSet(parse_id_set(a3));
-            let t1 = Arg::Num(a4.parse().unwrap());
-            let t2 = Arg::Num(a5.parse().unwrap());
+            let id: i32 = a1.parse().unwrap();
+            let atype = a2.to_string();
+            let idset = parse_id_set(a3);
+            let tstart: i32 = a4.parse().unwrap();
+            let tend: i32 = a5.parse().unwrap();
 
-            return TaoArgs::FiveArgs {
-                arg1: id1,
-                arg2: atype,
-                arg3: idset,
-                arg4: t1,
-                arg5: t2,
+            return TaoArgs::AssocRangeGetArgs {
+                id: id,
+                atype: atype,
+                idset: idset,
+                tstart: tstart,
+                tend: tend,
             };
-        }
+        },
         TaoOp::AssocCount => {
             let (a1, a2) = unwrap_two_args(args);
-            let id = Arg::UID(a1.parse().unwrap());
-            let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
+            let id = a1.parse().unwrap();
+            let atype = a2.to_string();
 
-            return TaoArgs::TwoArgs {
-                arg1: id,
-                arg2: atype,
+            return TaoArgs::AssocCountArgs {
+                id: id,
+                atype: atype,
             };
-        }
+        },
         TaoOp::AssocRange => {
-            let (a1, a2, a3, a4) = unwrap_four_args(args);
-            let id1 = Arg::UID(a1.parse().unwrap());
-            let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
-            let r1 = Arg::Num(a3.parse().unwrap());
-            let r2 = Arg::Num(a4.parse().unwrap());
-
-            return TaoArgs::FourArgs {
-                arg1: id1,
-                arg2: atype,
-                arg3: r1,
-                arg4: r2,
-            };
-        }
-        TaoOp::AssocTimeRange => {
             let (a1, a2, a3, a4, a5) = unwrap_five_args(args);
-            let id1 = Arg::UID(a1.parse().unwrap());
-            let atype = Arg::AssocType(AssocType::from_str(a2).unwrap());
-            let t1 = Arg::Num(a3.parse().unwrap());
-            let t2 = Arg::Num(a4.parse().unwrap());
-            let lim = Arg::Num(a5.parse().unwrap());
+            let id1: i32 = a1.parse().unwrap();
+            let atype = a2.to_string(); 
+            let t1: i32= a3.parse().unwrap();
+            let t2: i32 = a4.parse().unwrap();
+            let lim: i32 = a5.parse().unwrap();
 
-            return TaoArgs::FiveArgs {
-                arg1: id1,
-                arg2: atype,
-                arg3: t1,
-                arg4: t2,
-                arg5: lim,
+            return TaoArgs::AssocRangeArgs {
+                id: id1,
+                atype: atype,
+                tstart: t1,
+                tend: t2,
+                lim: lim,
             };
-        }
+        },
         TaoOp::ObjAdd => {
             let (a1, a2, a3) = unwrap_three_args(args);
             let id: i32 = a1.parse().unwrap();
-            let otype = Arg::ObjType(ObjType::from_str(a2).unwrap());
-            println!("{:#?}\n", a3);
+            let otype = a2.to_string();
             let data = a3.to_string();
 
             return TaoArgs::ObjAddArgs {
-                arg1: id,
-                arg2: otype.to_string(),
-                arg3: data,
+                id: id,
+                otype: otype,
+                data: data,
             };
-        }
+        },
         TaoOp::ObjGet => {
-            // let mut args = args.into_inner();
             let id: i32 = args.next().unwrap().as_str().parse().unwrap();
 
-            return TaoArgs::ObjGetArgs { arg1: id };
-        }
-        TaoOp::ObjDelete => {
-            // let mut args = args.into_inner();
-            let id = Arg::UID(args.next().unwrap().as_str().parse().unwrap());
-
-            return TaoArgs::OneArgs { arg1: id };
-        }
-        _ => panic!("Invalid Query Arguments"),
+            return TaoArgs::ObjGetArgs { id: id };
+        },
+        TaoOp::ObjDelete => panic!("Operation not supported"),
+        _ => panic!("Operation not supported"),
     };
 }
 
-fn parse_id_set(lst: &str) -> Vec<Arg> {
+fn parse_id_set(lst: &str) -> Vec<i32> {
     let mut ids = TaoParser::parse(Rule::NumList, lst)
         .unwrap_or_else(|e| panic!("{}", e));
     let ids = ids.next().unwrap();
@@ -211,13 +165,13 @@ fn parse_id_set(lst: &str) -> Vec<Arg> {
         Rule::Number => true,
         _ => panic!("Set of IDs should only contain numbers"),
     });
-    let idset = ids.map(|n| Arg::UID(n.as_str().parse().unwrap()));
-    let idset = idset.collect::<Vec<Arg>>();
+    let idset = ids.map(|n| n.as_str().parse().unwrap());
+    let idset = idset.collect::<Vec<i32>>();
 
     return idset;
 }
 
-// Embarrassing!
+// not really clean
 fn unwrap_two_args(mut args: pest::iterators::Pairs<Rule>) -> (&str, &str) {
     // let mut args = args.into_inner();
     let a1 = args.next().unwrap().as_str();

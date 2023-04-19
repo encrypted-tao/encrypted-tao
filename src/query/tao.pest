@@ -10,7 +10,6 @@ Query = {
   | AssocRGet
   | AssocCount
   | AssocRange
-  | AssocTRange
   | ObjAdd
   | ObjGet
   | ObjDelete
@@ -22,8 +21,7 @@ AssocChType = { ASSOC ~ CHTYPE ~ Number ~ AssocType ~ Arg ~ AssocType }
 AssocGet = { ASSOC ~ GET ~ Number ~ AssocType ~ NumList }
 AssocRGet = { ASSOC ~ RGET ~ Number ~ AssocType ~ NumList ~ Number ~ Number}
 AssocCount = { ASSOC ~ COUNT ~ Number ~ AssocType }
-AssocRange = { ASSOC ~ RANGE ~ Number ~ AssocType ~ Number ~ Number }
-AssocTRange = { ASSOC ~ TRANGE ~ Number ~ AssocType ~ Number ~ Number ~ Number }
+AssocRange = { ASSOC ~ RANGE ~ Number ~ AssocType ~ Number ~ Number ~ Number }
 
 ObjAdd = { OBJ ~ ADD ~ Number ~ ObjType ~ String }
 ObjGet = { OBJ ~ GET ~ Number }
@@ -55,7 +53,6 @@ GET = { "GET" }
 RGET = { "RGET" }
 COUNT = { "COUNT" }
 RANGE = { "RANGE" }
-TRANGE = { "TRANGE" }
 UPDATE = { "UPDATE" }
 
 Number = @{ ASCII_DIGIT+ }

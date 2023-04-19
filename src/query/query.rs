@@ -10,7 +10,6 @@ pub enum TaoOp {
     AssocRangeGet,
     AssocCount,
     AssocRange,
-    AssocTimeRange,
     AssocAdd,
     AssocDelete,
     AssocChangeType,
@@ -96,84 +95,44 @@ impl fmt::Display for AssocType {
 }
 
 #[derive(Debug, Clone)]
-pub enum Arg {
-    ObjType(ObjType),
-    AssocType(AssocType),
-    Str(String),
-    Num(i32),
-    UID(i32),
-    UIDSet(Vec<Arg>),
-}
-
-impl fmt::Display for Arg {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Arg::ObjType(ot) => write!(f, "{}", ot.to_string()),
-            Arg::AssocType(at) => write!(f, "{}", at.to_string()),
-            Arg::Str(s) => write!(f, "{}", s),
-            Arg::Num(i) => write!(f, "{}", i.to_string()),
-            Arg::UID(i) => write!(f, "{}", i.to_string()),
-            Arg::UIDSet(_) => panic!("to_string for list not supported"),
-        }
-    }
-}
-
-/*
-pub fn arg_to_sql_param(a : &Arg) -> &'static (dyn ToSql + Sync) {
-    let const sql_a = match a {
-        Arg::ObjType(ot) => &ot.to_string() as &(dyn ToSql + Sync),
-        Arg::AssocType(at) => &at.to_string() as &(dyn ToSql + Sync),
-        Arg::Str(s) => &s as &(dyn ToSql + Sync),
-        Arg::Num(n) => &n as &(dyn ToSql + Sync),
-        Arg::UID(n) => &n as &(dyn ToSql + Sync),
-        _ => panic!("not supported"),
-        /* Arg::UIDSet(ns) => {
-            let inner = ns.iter().map(
-                |x| match x {
-                    Arg::UID(n) => &n as &(dyn ToSql + Sync),
-                    _ => panic!("Unexpected type"),
-            }).collect::<Vec<_>>().as_slice();
-            &inner as &(dyn ToSql + Sync)
-        } */
-    };
-    return sql_a;
-}
-*/
-
-#[derive(Debug, Clone)]
 pub enum TaoArgs {
-    OneArgs {
-        arg1: Arg,
+    AssocAddArgs {
+        id1: i32,
+        atype: String,
+        id2: i32,
+        time: i32,
+        data: String,
     },
-    TwoArgs {
-        arg1: Arg,
-        arg2: Arg,
+    AssocGetArgs {
+       id: i32,
+       atype: String,
+       idset: Vec<i32>,
     },
-    ThreeArgs {
-        arg1: Arg,
-        arg2: Arg,
-        arg3: Arg,
+    AssocRangeGetArgs {
+        id: i32,
+        atype: String,
+        idset: Vec<i32>,
+        tstart: i32,
+        tend: i32,
     },
-    FourArgs {
-        arg1: Arg,
-        arg2: Arg,
-        arg3: Arg,
-        arg4: Arg,
+    AssocCountArgs {
+        id: i32,
+        atype: String,
     },
-    FiveArgs {
-        arg1: Arg,
-        arg2: Arg,
-        arg3: Arg,
-        arg4: Arg,
-        arg5: Arg,
+    AssocRangeArgs {
+        id: i32,
+        atype: String,
+        tstart: i32,
+        tend: i32,
+        lim: i32,
     },
     ObjGetArgs {
-        arg1: i32,
+        id: i32,
     },
     ObjAddArgs {
-        arg1: i32,
-        arg2: String,
-        arg3: String,
+        id: i32,
+        otype: String,
+        data: String,
     },
 }
 
@@ -188,4 +147,17 @@ pub struct SqlQuery {
     pub op: TaoOp,
     pub query: String,
     pub params: TaoArgs,
+}
+
+// some crusty helper functions that probably needs a better home
+pub fn format_in_clause(lst: &Vec<i32>, offset: i32) -> String {
+    let sz = lst.len() as i32;
+    let indices = (1..(sz + 1))
+        .map(|i| {
+            let v = i + offset;
+            format!("${v}")
+        })
+        .collect::<Vec<String>>();
+    let tup = indices.join(", ");
+    return format!("({tup})");
 }
