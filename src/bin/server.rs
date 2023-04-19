@@ -1,10 +1,5 @@
-use actix_web::{
-    get, post,
-    web::{Data, Json},
-    App, HttpResponse, HttpServer, Responder,
-};
+use actix_web::{web::{Data}, App, HttpServer};
 use encrypted_tao::service;
-use serde::{Deserialize, Serialize};
 use std::env;
 
 #[actix_web::main]

@@ -1,4 +1,4 @@
-use crate::query::query::{SqlQuery, TaoOp};
+use crate::query::query::{TaoOp};
 use serde::{Deserialize, Serialize};
 use tokio_postgres::Row;
 

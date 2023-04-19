@@ -2,7 +2,6 @@ use awc::Client;
 use encrypted_tao::service;
 use std::env;
 use std::io::{self, Write};
-use tokio;
 
 async fn execute_tao_query(
     host: String,
@@ -67,7 +66,7 @@ async fn main() {
         let mut query = String::new();
         print!("tao > ");
         let _ = io::stdout().flush();
-        io::stdin().read_line(&mut query);
+        io::stdin().read_line(&mut query).expect("Failed to read line");
         let query = query.trim_end();
         let res = execute_tao_query(
             host.to_string(),

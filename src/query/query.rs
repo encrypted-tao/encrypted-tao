@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
-use core::marker::Sync;
-use tokio_postgres::{connect, types::ToSql, Client, Error, NoTls, Row};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TaoOp {

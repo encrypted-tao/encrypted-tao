@@ -2,14 +2,13 @@ use crate::query;
 use actix_web::{
     get, post,
     web::{scope, Data, Json, ServiceConfig},
-    App, HttpResponse, HttpServer, Responder,
+    HttpResponse, Responder,
 };
 use core::marker::Sync;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
-use serde_json;
 use std::sync::{Arc, Mutex};
-use tokio_postgres::{connect, types::ToSql, Client, Error, NoTls, Row};
+use tokio_postgres::{connect, types::ToSql, Client, NoTls};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryRequest {
@@ -51,10 +50,6 @@ impl DBConfig {
 pub struct TaoServer {
     pub cache: Arc<Mutex<Vec<i32>>>,
     pub db_config: DBConfig,
-}
-
-pub struct TestArgs {
-    arg: i32,
 }
 
 impl TaoServer {
@@ -103,7 +98,6 @@ impl TaoServer {
     pub async fn pipeline(
         &self,
         query_input: String,
-        encrypt: bool,
     ) -> HttpResponse {
         println!("Received Query: {:#?}", query_input);
         let tao_queries = query::parser::parse(query_input.as_str());
@@ -127,7 +121,7 @@ impl TaoServer {
                          VALUES ($1, $2, $3, $4, $5)";
 
         let (id1, ty, id2, time, data) = match query.args {
-            query::query::TaoArgs::AssocAddArgs { id1: id1, atype: atype, id2: id2, time: time, data: data } => (id1, atype, id2, time, data),
+            query::query::TaoArgs::AssocAddArgs { id1, atype, id2, time, data } => (id1, atype, id2, time, data),
             _ => panic!("Incorrect args to assoc add"),
         };
 
@@ -146,7 +140,7 @@ impl TaoServer {
         let client = self.db_connect().await.unwrap();
 
         let (id, ty, idset) = match query.args {
-            query::query::TaoArgs::AssocGetArgs { id: id, atype: atype, idset: idset } => (id, atype, idset),
+            query::query::TaoArgs::AssocGetArgs { id, atype, idset } => (id, atype, idset),
             // query::query::TaoArgs::AssocArgsEncryped ...
             _ => panic!("Incorrect args to assoc get"),
         };
@@ -183,7 +177,7 @@ impl TaoServer {
         let client = self.db_connect().await.unwrap();
 
         let (id, ty, idset, tstart, tend) = match query.args {
-            query::query::TaoArgs::AssocRangeGetArgs { id: id, atype: atype, idset: idset, tstart: tstart, tend: tend } => (id, atype, idset, tstart, tend),
+            query::query::TaoArgs::AssocRangeGetArgs { id, atype, idset, tstart, tend } => (id, atype, idset, tstart, tend),
             // query::query::TaoArgs::AssocArgsEncryped ...
             _ => panic!("Incorrect args to assoc get"),
         };
@@ -226,7 +220,7 @@ impl TaoServer {
                        AND atype = $2";
 
         let (id, atype) = match query.args {
-            query::query::TaoArgs::AssocCountArgs { id: id, atype: atype } => (id, atype),
+            query::query::TaoArgs::AssocCountArgs { id, atype } => (id, atype),
             _ => panic!("Incorrect args to obj get"),
         };
 
@@ -254,7 +248,7 @@ impl TaoServer {
                      LIMIT $5";
 
         let (id, atype, tstart, tend, lim ) = match query.args {
-            query::query::TaoArgs::AssocRangeArgs { id: id, atype: atype, tstart: tstart, tend: tend, lim: lim } => (id, atype, tstart, tend, lim),
+            query::query::TaoArgs::AssocRangeArgs { id, atype, tstart, tend, lim } => (id, atype, tstart, tend, lim),
             _ => panic!("Incorrect args to obj get"),
         };
 
@@ -277,7 +271,7 @@ impl TaoServer {
                          WHERE id = $1";
 
         let id = match query.args {
-            query::query::TaoArgs::ObjGetArgs { id: id } => id,
+            query::query::TaoArgs::ObjGetArgs { id } => id,
             _ => panic!("Incorrect args to obj get"),
         };
 
@@ -299,7 +293,7 @@ impl TaoServer {
                          VALUES ($1, $2, $3)";
 
         let (id, ty, data) = match query.args {
-            query::query::TaoArgs::ObjAddArgs { id: id, otype: otype, data: data } => (id, otype, data),
+            query::query::TaoArgs::ObjAddArgs { id, otype, data } => (id, otype, data),
             _ => panic!("Incorrect args to obj add"),
         };
 
@@ -322,7 +316,7 @@ pub async fn query_handler(
     tao: Data<TaoServer>,
     query: Json<QueryRequest>,
 ) -> HttpResponse {
-    let res = TaoServer::pipeline(&tao, query.into_inner().query, false).await;
+    let res = TaoServer::pipeline(&tao, query.into_inner().query).await;
     return res;
 }
 

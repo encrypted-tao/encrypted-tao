@@ -1,6 +1,5 @@
-use crate::query::query::{AssocType, ObjType, Query, TaoArgs, TaoOp};
+use crate::query::query::{Query, TaoArgs, TaoOp};
 use pest::{self, Parser};
-use std::str::FromStr;
 
 #[derive(pest_derive::Parser)]
 #[grammar = "query/tao.pest"]
