@@ -5,10 +5,10 @@ use tokio_postgres::Row;
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DBRow {
     AssocRow {
-        id1: i64,
+        id1: i32,
         atype: String,
-        id2: i64,
-        t: i64,
+        id2: i32,
+        t: i32,
         data: String,
     },
     ObjRow {

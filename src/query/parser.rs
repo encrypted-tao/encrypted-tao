@@ -125,7 +125,7 @@ fn parse_tao_args(
             let atype = a2.to_string(); 
             let t1: i32= a3.parse().unwrap();
             let t2: i32 = a4.parse().unwrap();
-            let lim: i32 = a5.parse().unwrap();
+            let lim: i64 = a5.parse().unwrap();
 
             return TaoArgs::AssocRangeArgs {
                 id: id1,

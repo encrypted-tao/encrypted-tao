@@ -124,7 +124,7 @@ pub enum TaoArgs {
         atype: String,
         tstart: i32,
         tend: i32,
-        lim: i32,
+        lim: i64,
     },
     ObjGetArgs {
         id: i32,
