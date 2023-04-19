@@ -1,6 +1,6 @@
-use actix_web::{web::{Data}, App, HttpServer};
-use encrypted_tao::service;
 use std::env;
+use actix_web::{web::Data, App, HttpServer};
+use encrypted_tao::service;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

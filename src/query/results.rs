@@ -1,4 +1,4 @@
-use crate::query::query::{TaoOp};
+use crate::query::query::TaoOp;
 use serde::{Deserialize, Serialize};
 use tokio_postgres::Row;
 
@@ -22,15 +22,15 @@ pub enum DBRow {
 
 fn deserialize_row(op: &TaoOp, row: &Row) -> DBRow {
     match op {
-        TaoOp::AssocGet
-        | TaoOp::AssocRangeGet
-        | TaoOp::AssocRange => DBRow::AssocRow {
-            id1: row.get(0),
-            atype: row.get(1),
-            id2: row.get(2),
-            t: row.get(3),
-            data: row.get(4),
-        },
+        TaoOp::AssocGet | TaoOp::AssocRangeGet | TaoOp::AssocRange => {
+            DBRow::AssocRow {
+                id1: row.get(0),
+                atype: row.get(1),
+                id2: row.get(2),
+                t: row.get(3),
+                data: row.get(4),
+            }
+        }
         TaoOp::AssocCount => DBRow::Count(row.get(0)),
         TaoOp::ObjGet => DBRow::ObjRow {
             id: row.get(0),

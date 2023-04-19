@@ -1,7 +1,7 @@
-use awc::Client;
-use encrypted_tao::service;
 use std::env;
 use std::io::{self, Write};
+use awc::Client;
+use encrypted_tao::service;
 
 async fn execute_tao_query(
     host: String,
@@ -19,11 +19,7 @@ async fn execute_tao_query(
         .await
         .unwrap();
 
-    let res = match resp {
-        service::tao::QueryResponse { response: _ } => resp,
-        _ => panic!("oops"),
-    };
-    return res;
+    return resp;
 }
 
 fn print_header(host: String, port: String) {
@@ -65,14 +61,16 @@ async fn main() {
     let host = &args[1];
     let port = &args[2];
 
-    print_header(host.to_string(), port.to_string()); 
+    print_header(host.to_string(), port.to_string());
     print_help();
 
     loop {
         let mut query = String::new();
         print!("tao > ");
         let _ = io::stdout().flush();
-        io::stdin().read_line(&mut query).expect("Failed to read line");
+        io::stdin()
+            .read_line(&mut query)
+            .expect("Failed to read line");
         let query = query.trim_end();
         let res = execute_tao_query(
             host.to_string(),

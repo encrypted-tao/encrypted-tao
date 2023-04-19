@@ -42,16 +42,12 @@ fn parse_query(query: pest::iterators::Pair<Rule>) -> Query {
 fn parse_tao_op(target: &str, op: &str) -> TaoOp {
     let tao_op = match (target, op) {
         ("ASSOC", "ADD") => TaoOp::AssocAdd,
-        ("ASSOC", "DELETE") => TaoOp::AssocDelete,
-        ("ASSOC", "CHTYPE") => TaoOp::AssocChangeType,
         ("ASSOC", "GET") => TaoOp::AssocGet,
         ("ASSOC", "RGET") => TaoOp::AssocRangeGet,
         ("ASSOC", "COUNT") => TaoOp::AssocCount,
         ("ASSOC", "RANGE") => TaoOp::AssocRange,
         ("OBJ", "ADD") => TaoOp::ObjAdd,
         ("OBJ", "GET") => TaoOp::ObjGet,
-        ("OBJ", "DELETE") => TaoOp::ObjDelete,
-        ("OBJ", "UPDATE") => TaoOp::ObjUpdate,
         _ => panic!("Invalid target and operation combination"),
     };
     return tao_op;
@@ -77,7 +73,7 @@ fn parse_tao_args(
                 time: time,
                 data: data,
             };
-        },
+        }
         TaoOp::AssocDelete => panic!("Operation not supported"),
         TaoOp::AssocChangeType => panic!("Operation not supported"),
         TaoOp::AssocGet => {
@@ -91,7 +87,7 @@ fn parse_tao_args(
                 atype: atype,
                 idset: idset,
             };
-        },
+        }
         TaoOp::AssocRangeGet => {
             let (a1, a2, a3, a4, a5) = unwrap_five_args(args);
             let id: i32 = a1.parse().unwrap();
@@ -107,7 +103,7 @@ fn parse_tao_args(
                 tstart: tstart,
                 tend: tend,
             };
-        },
+        }
         TaoOp::AssocCount => {
             let (a1, a2) = unwrap_two_args(args);
             let id = a1.parse().unwrap();
@@ -117,12 +113,12 @@ fn parse_tao_args(
                 id: id,
                 atype: atype,
             };
-        },
+        }
         TaoOp::AssocRange => {
             let (a1, a2, a3, a4, a5) = unwrap_five_args(args);
             let id1: i32 = a1.parse().unwrap();
-            let atype = a2.to_string(); 
-            let t1: i32= a3.parse().unwrap();
+            let atype = a2.to_string();
+            let t1: i32 = a3.parse().unwrap();
             let t2: i32 = a4.parse().unwrap();
             let lim: i64 = a5.parse().unwrap();
 
@@ -133,7 +129,7 @@ fn parse_tao_args(
                 tend: t2,
                 lim: lim,
             };
-        },
+        }
         TaoOp::ObjAdd => {
             let (a1, a2, a3) = unwrap_three_args(args);
             let id: i32 = a1.parse().unwrap();
@@ -145,12 +141,12 @@ fn parse_tao_args(
                 otype: otype,
                 data: data,
             };
-        },
+        }
         TaoOp::ObjGet => {
             let id: i32 = args.next().unwrap().as_str().parse().unwrap();
 
             return TaoArgs::ObjGetArgs { id: id };
-        },
+        }
         TaoOp::ObjDelete => panic!("Operation not supported"),
         _ => panic!("Operation not supported"),
     };
@@ -190,18 +186,6 @@ fn unwrap_three_args(
         _ => a3t.as_str(),
     };
     return (a1, a2, a3);
-}
-
-fn unwrap_four_args(
-    mut args: pest::iterators::Pairs<Rule>,
-) -> (&str, &str, &str, &str) {
-    // let mut args = args.into_inner();
-    let a1 = args.next().unwrap().as_str();
-    let a2 = args.next().unwrap().as_str();
-    let a3 = args.next().unwrap().as_str();
-    let a4 = args.next().unwrap().as_str();
-
-    return (a1, a2, a3, a4);
 }
 
 fn unwrap_five_args(

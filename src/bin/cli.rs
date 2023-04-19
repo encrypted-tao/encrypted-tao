@@ -1,7 +1,6 @@
+use std::env;
 use awc::Client;
 use encrypted_tao::service;
-use std::env;
-use std::io::{self, Write};
 
 pub struct Config {
     pub server_addr: String,
@@ -13,7 +12,10 @@ impl Config {
         dotenv::from_path(env_path).ok();
         let server_addr = dotenv::var("SERVER_ADDR").unwrap();
         let server_port = dotenv::var("SERVER_PORT").unwrap();
-        Config { server_addr, server_port }
+        Config {
+            server_addr,
+            server_port,
+        }
     }
 }
 
@@ -56,11 +58,7 @@ async fn execute_tao_query(
         .await
         .unwrap();
 
-    let res = match resp {
-        service::tao::QueryResponse { response: _ } => resp,
-        _ => panic!("oops"),
-    };
-    return res;
+    return resp;
 }
 
 #[actix_rt::main]
@@ -83,5 +81,4 @@ async fn main() {
             println!("\n{:#?}\n", res)
         }
     }
-
 }

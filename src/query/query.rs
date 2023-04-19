@@ -102,9 +102,9 @@ pub enum TaoArgs {
         data: String,
     },
     AssocGetArgs {
-       id: i32,
-       atype: String,
-       idset: Vec<i32>,
+        id: i32,
+        atype: String,
+        idset: Vec<i32>,
     },
     AssocRangeGetArgs {
         id: i32,
