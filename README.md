@@ -32,6 +32,7 @@ $ ln -s ./target/debug/tao-server ./tao-server
 ```
 
 4. Run the project
+
 Make sure your .env is setup:
 ```
 DATABASE_HOST=
