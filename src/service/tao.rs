@@ -1,4 +1,5 @@
-use crate::query;
+use std::sync::{Arc, Mutex};
+
 use actix_web::{
     get, post,
     web::{scope, Data, Json, ServiceConfig},
@@ -7,8 +8,13 @@ use actix_web::{
 use core::marker::Sync;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
 use tokio_postgres::{connect, types::ToSql, Client, NoTls};
+
+use crate::query::{
+    parser,
+    query::{format_in_clause, Query, TaoArgs, TaoOp},
+    results::{deserialize_rows, DBRow},
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryRequest {
@@ -17,8 +23,7 @@ pub struct QueryRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryResponse {
-    pub response: Vec<Vec<query::results::DBRow>>,
-    //    pub response: Vec<query::query::SqlQuery>,
+    pub response: Vec<Vec<DBRow>>,
 }
 
 pub struct DBConfig {
@@ -77,20 +82,15 @@ impl TaoServer {
         return Some(client);
     }
 
-    async fn db_execute(
-        &self,
-        query: query::query::Query,
-    ) -> Option<Vec<query::results::DBRow>> {
+    async fn db_execute(&self, query: Query) -> Option<Vec<DBRow>> {
         let res = match query.op {
-            query::query::TaoOp::AssocAdd => self.assoc_add(query).await,
-            query::query::TaoOp::AssocGet => self.assoc_get(query).await,
-            query::query::TaoOp::AssocRangeGet => {
-                self.assoc_range_get(query).await
-            }
-            query::query::TaoOp::AssocCount => self.assoc_count(query).await,
-            query::query::TaoOp::AssocRange => self.assoc_range(query).await,
-            query::query::TaoOp::ObjAdd => self.obj_add(query).await,
-            query::query::TaoOp::ObjGet => self.obj_get(query).await,
+            TaoOp::AssocAdd => self.assoc_add(query).await,
+            TaoOp::AssocGet => self.assoc_get(query).await,
+            TaoOp::AssocRangeGet => self.assoc_range_get(query).await,
+            TaoOp::AssocCount => self.assoc_count(query).await,
+            TaoOp::AssocRange => self.assoc_range(query).await,
+            TaoOp::ObjAdd => self.obj_add(query).await,
+            TaoOp::ObjGet => self.obj_get(query).await,
             _ => panic!("todo!"),
         };
 
@@ -99,7 +99,7 @@ impl TaoServer {
 
     pub async fn pipeline(&self, query_input: String) -> HttpResponse {
         println!("Received Query: {:#?}", query_input);
-        let tao_queries = query::parser::parse(query_input.as_str());
+        let tao_queries = parser::parse(query_input.as_str());
         let results = join_all(
             tao_queries
                 .iter()
@@ -110,17 +110,14 @@ impl TaoServer {
         return HttpResponse::Ok().json(&QueryResponse { response: results });
     }
 
-    async fn assoc_add(
-        &self,
-        query: query::query::Query,
-    ) -> Option<Vec<query::results::DBRow>> {
+    async fn assoc_add(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
 
         let sql_query = "INSERT INTO Associations(id1, atype, id2, t, data) \
                          VALUES ($1, $2, $3, $4, $5)";
 
         let (id1, ty, id2, time, data) = match query.args {
-            query::query::TaoArgs::AssocAddArgs {
+            TaoArgs::AssocAddArgs {
                 id1,
                 atype,
                 id2,
@@ -138,25 +135,20 @@ impl TaoServer {
             .await
             .unwrap();
 
-        let res = query::results::deserialize_rows(&query.op, resp);
+        let res = deserialize_rows(&query.op, resp);
         return Some(res);
     }
 
-    async fn assoc_get(
-        &self,
-        query: query::query::Query,
-    ) -> Option<Vec<query::results::DBRow>> {
+    async fn assoc_get(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
 
         let (id, ty, idset) = match query.args {
-            query::query::TaoArgs::AssocGetArgs { id, atype, idset } => {
-                (id, atype, idset)
-            }
-            // query::query::TaoArgs::AssocArgsEncryped ...
+            TaoArgs::AssocGetArgs { id, atype, idset } => (id, atype, idset),
+            // TaoArgs::AssocArgsEncryped ...
             _ => panic!("Incorrect args to assoc get"),
         };
 
-        let in_set = query::query::format_in_clause(&idset, 2);
+        let in_set = format_in_clause(&idset, 2);
         let sql_query = format!(
             "SELECT * \
              FROM Associations \
@@ -174,18 +166,15 @@ impl TaoServer {
 
         let resp = &client.query(&sql_query, &params).await.unwrap();
 
-        let res = query::results::deserialize_rows(&query.op, resp);
+        let res = deserialize_rows(&query.op, resp);
         return Some(res);
     }
 
-    async fn assoc_range_get(
-        &self,
-        query: query::query::Query,
-    ) -> Option<Vec<query::results::DBRow>> {
+    async fn assoc_range_get(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
 
         let (id, ty, idset, tstart, tend) = match query.args {
-            query::query::TaoArgs::AssocRangeGetArgs {
+            TaoArgs::AssocRangeGetArgs {
                 id,
                 atype,
                 idset,
@@ -195,7 +184,7 @@ impl TaoServer {
             _ => panic!("Incorrect args to assoc get"),
         };
 
-        let in_set = query::query::format_in_clause(&idset, 4);
+        let in_set = format_in_clause(&idset, 4);
         let sql_query = format!(
             "SELECT * \
              FROM Associations \
@@ -219,14 +208,11 @@ impl TaoServer {
 
         let resp = &client.query(&sql_query, &params).await.unwrap();
 
-        let res = query::results::deserialize_rows(&query.op, resp);
+        let res = deserialize_rows(&query.op, resp);
         return Some(res);
     }
 
-    async fn assoc_count(
-        &self,
-        query: query::query::Query,
-    ) -> Option<Vec<query::results::DBRow>> {
+    async fn assoc_count(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
         let sql_query = "SELECT COUNT(*) \
                      FROM Associations \
@@ -234,7 +220,7 @@ impl TaoServer {
                        AND atype = $2";
 
         let (id, atype) = match query.args {
-            query::query::TaoArgs::AssocCountArgs { id, atype } => (id, atype),
+            TaoArgs::AssocCountArgs { id, atype } => (id, atype),
             _ => panic!("Incorrect args to obj get"),
         };
 
@@ -243,14 +229,11 @@ impl TaoServer {
             .await
             .unwrap();
 
-        let res = query::results::deserialize_rows(&query.op, resp);
+        let res = deserialize_rows(&query.op, resp);
         return Some(res);
     }
 
-    async fn assoc_range(
-        &self,
-        query: query::query::Query,
-    ) -> Option<Vec<query::results::DBRow>> {
+    async fn assoc_range(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
 
         let sql_query = "SELECT * \
@@ -263,7 +246,7 @@ impl TaoServer {
                      LIMIT $5";
 
         let (id, atype, tstart, tend, lim) = match query.args {
-            query::query::TaoArgs::AssocRangeArgs {
+            TaoArgs::AssocRangeArgs {
                 id,
                 atype,
                 tstart,
@@ -278,14 +261,11 @@ impl TaoServer {
             .await
             .unwrap();
 
-        let res = query::results::deserialize_rows(&query.op, resp);
+        let res = deserialize_rows(&query.op, resp);
         return Some(res);
     }
 
-    async fn obj_get(
-        &self,
-        query: query::query::Query,
-    ) -> Option<Vec<query::results::DBRow>> {
+    async fn obj_get(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
 
         let sql_query = "SELECT * \
@@ -293,29 +273,24 @@ impl TaoServer {
                          WHERE id = $1";
 
         let id = match query.args {
-            query::query::TaoArgs::ObjGetArgs { id } => id,
+            TaoArgs::ObjGetArgs { id } => id,
             _ => panic!("Incorrect args to obj get"),
         };
 
         let resp = &client.query(sql_query, &[&id]).await.unwrap();
 
-        let res = query::results::deserialize_rows(&query.op, resp);
+        let res = deserialize_rows(&query.op, resp);
         return Some(res);
     }
 
-    async fn obj_add(
-        &self,
-        query: query::query::Query,
-    ) -> Option<Vec<query::results::DBRow>> {
+    async fn obj_add(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
 
         let sql_query = "INSERT INTO Objects(id, otype, data) \
                          VALUES ($1, $2, $3)";
 
         let (id, ty, data) = match query.args {
-            query::query::TaoArgs::ObjAddArgs { id, otype, data } => {
-                (id, otype, data)
-            }
+            TaoArgs::ObjAddArgs { id, otype, data } => (id, otype, data),
             _ => panic!("Incorrect args to obj add"),
         };
 
@@ -324,7 +299,7 @@ impl TaoServer {
             .await
             .unwrap();
 
-        let res = query::results::deserialize_rows(&query.op, resp);
+        let res = deserialize_rows(&query.op, resp);
         return Some(res);
     }
 }

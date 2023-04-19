@@ -1,5 +1,7 @@
 use std::env;
+
 use awc::Client;
+
 use encrypted_tao::service;
 
 pub struct Config {

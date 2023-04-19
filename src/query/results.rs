@@ -1,6 +1,7 @@
-use crate::query::query::TaoOp;
 use serde::{Deserialize, Serialize};
 use tokio_postgres::Row;
+
+use crate::query::query::TaoOp;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DBRow {

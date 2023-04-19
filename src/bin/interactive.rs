@@ -1,6 +1,8 @@
 use std::env;
 use std::io::{self, Write};
+
 use awc::Client;
+
 use encrypted_tao::service;
 
 async fn execute_tao_query(

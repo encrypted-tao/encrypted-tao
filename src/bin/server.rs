@@ -1,5 +1,7 @@
 use std::env;
+
 use actix_web::{web::Data, App, HttpServer};
+
 use encrypted_tao::service;
 
 #[actix_web::main]

@@ -1,5 +1,6 @@
-use crate::query::query::{Query, TaoArgs, TaoOp};
 use pest::{self, Parser};
+
+use crate::query::query::{Query, TaoArgs, TaoOp};
 
 #[derive(pest_derive::Parser)]
 #[grammar = "query/tao.pest"]
