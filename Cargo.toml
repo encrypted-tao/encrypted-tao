@@ -29,3 +29,7 @@ path = "src/bin/server.rs"
 [[bin]]
 name="tao-cli"
 path = "src/bin/cli.rs"
+
+[[bin]]
+name="tao-interactive"
+path = "src/bin/interactive.rs"
