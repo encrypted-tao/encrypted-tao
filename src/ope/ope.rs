@@ -230,5 +230,13 @@ mod tests {
         assert!(b < c);
 
     }
+    #[test]
+    fn test_decrypt() {
+       let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 0 , end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 1, end: DEFAULT_OUTPUT_RANGE_END}};
+       
+       let num = test.encrypt(2367814);
+
+       assert_eq!(num, test.decrypt(num));
+    }
 
 }
