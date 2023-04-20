@@ -6,6 +6,7 @@ Simplified Implementation of Facebook's TAO, but encrypted
 ```
 $ sh <(curl -L https://nixos.org/nix/install) --no-daemon
 ```
+Otherwise use [`rustup`](https://github.com/rust-lang/rustup) to install the rust toolchain.
 
 2. Install `just` if you want [https://github.com/casey/just](https://github.com/casey/just)
 
