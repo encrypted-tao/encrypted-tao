@@ -38,10 +38,8 @@ pub mod ope {
     use generic_array::{GenericArray, arr, ArrayLength};
     use std::cmp;
     use generic_array::typenum::{UInt, Integer};
-
-    pub const DEFAULT_INPUT_RANGE_START: u64 = 0;
+ 
     pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
-    pub const DEFAULT_OUTPUT_RANGE_START: u64 = 1;
     pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
 
     pub struct Range {
@@ -52,8 +50,7 @@ pub mod ope {
     impl Range {
 
         pub fn contains(&mut self, number: u64) -> bool {
-            
-            return self.start.ge(&number) && self.end.le(&number);
+           return self.start <= number && self.end >= number;
         }
 
         pub fn size(&mut self) -> u64 {
@@ -83,9 +80,10 @@ pub mod ope {
          * encrypt(self, plaintext)
          *  OPE is recursive encryption, check cases then recursive helper
          */
-        pub fn encrypt(&mut self, plaintext:u64) -> u64 {
+        pub fn encrypt(&mut self, plaintext: u64) -> u64 {
             
             if !self.in_range.contains(plaintext) {
+                println!("range does not contain plaintext\n");
                  return 1 as u64;
             }
 
@@ -94,17 +92,17 @@ pub mod ope {
         
         pub fn recursive_encrypt(&mut self, plaintext: u64,  in_start: u64, in_end:u64, out_start:u64, out_end:u64) -> u64 {
 
-            let mut in_range = Range {start: in_start, end: in_end};
-            let mut out_range = Range {start: out_start, end: out_end};
+                let mut in_range = Range {start: in_start, end: in_end};
+                let mut out_range = Range {start: out_start, end: out_end};
                 let in_size = in_range.size();
                 let out_size = out_range.size();
-                let in_edge = in_range.start - 1;
-                let out_edge = out_range.start -1;
+                let in_edge = (in_range.start as i64 - 1) as u64 ;
+                let out_edge = (out_range.start as i64 -1) as u64;
                 let tmp = (out_size as f64 / 2.0).ceil() as u64;
                 let mid = out_edge + tmp;
 
                 // sanity check 
-                assert!(in_size.le(&out_size));
+                assert!(in_size <= out_size);
 
                 if in_range.size() == 1 {
                     let min_in = in_range.start;
@@ -116,11 +114,9 @@ pub mod ope {
                 let tape = self.tape_gen(mid);
                 let samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, tape);
 
-                if plaintext.le(&samples) {
+                if plaintext <= samples {
                     return self.recursive_encrypt(plaintext, in_edge + 1, samples, out_edge + 1, mid);
                 }  else {
-                    let new_in = Range { start:samples + 1, end:in_edge + in_size };
-                    let new_out = Range { start:mid + 1, end:out_edge + out_size };
                     return self.recursive_encrypt(plaintext, samples + 1, in_edge + in_size, mid + 1, out_edge + out_size);
                 }
 
@@ -128,6 +124,7 @@ pub mod ope {
         pub fn decrypt(&mut self, ciphertext: u64) -> u64 {
         
              if !self.in_range.contains(ciphertext) {
+                println!("range does not contain ciphertext\n");
                  return 1 as u64;
              }
             return self.recursive_decrypt(ciphertext, self.in_range.start, self.in_range.end, self.out_range.start, self.out_range.end);
@@ -146,7 +143,7 @@ pub mod ope {
                 let mid = out_edge + tmp;
 
                 // sanity check
-                assert!(in_size.le(&out_size));
+                assert!(in_size <= out_size);
                     
                 if in_range.size() == 1 {
                     let min_in = in_range.start;
@@ -162,7 +159,7 @@ pub mod ope {
                 let tape = self.tape_gen(mid);
                 let samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, tape);
 
-                if ciphertext.le(&mid) {
+                if ciphertext <= mid {
                     return self.recursive_decrypt(ciphertext, in_edge + 1, samples, out_edge+1, mid)
                 }  else {
                     return self.recursive_decrypt(ciphertext, samples+1, in_edge+in_size, mid+1, out_edge+out_size);
@@ -189,11 +186,11 @@ pub mod ope {
             hmac_obj.update(&data_bytes);
 
             let hmac_res = hmac_obj.finalize();
-            
 
             let aes_cipher = aes_init(&mut hmac_res.into_bytes());
 
             let mut data_arr = GenericArray::from_slice(&data_bytes).clone();
+
             aes_cipher.encrypt_block(&mut data_arr);
 
             
@@ -201,14 +198,12 @@ pub mod ope {
 
         }
 
-
     }
 }    
 
 /*
  * OPE tests
  *  run via `cargo test`
- *  TO DO: add more testing
  */
 #[cfg(test)]
 mod tests {
@@ -217,23 +212,18 @@ mod tests {
     use crate::ope::ope::ope::OPE;
     use crate::ope::ope::ope::Range;
 
-    pub const DEFAULT_INPUT_RANGE_START: u64 = 0;
     pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
-    pub const DEFAULT_OUTPUT_RANGE_START: u64 = 1;
     pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
 
 
     #[test]
     fn test_encrypt_decrypt() {
 
-        let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start:DEFAULT_INPUT_RANGE_START, end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: DEFAULT_OUTPUT_RANGE_START, end: DEFAULT_OUTPUT_RANGE_END}};
-        let plaintext: u64 = 2142314;
+        let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 0 , end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 1, end: DEFAULT_OUTPUT_RANGE_END}};
+        let plaintext: u64 = 2;
        
         let ciphertext = test.encrypt(plaintext);
         let decrypt = test.decrypt(ciphertext);
-
-        println!("Ciphertext: {}\n", ciphertext.to_string());
-        println!("Decrypted: {}\n", decrypt.to_string());
 
         assert_eq!(plaintext, decrypt);
     }
