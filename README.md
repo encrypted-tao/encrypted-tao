@@ -56,7 +56,7 @@ $ ./tao-cli --help  // for instructions
 $ ./tao-cli "[your query]"
 ```
 
-To run the TAO interactive program:
+To run the TAO interactive client:
 ```
 $ ./tao-interactive <host> <port>
 ```
