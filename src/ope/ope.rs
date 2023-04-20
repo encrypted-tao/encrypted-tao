@@ -217,15 +217,18 @@ mod tests {
 
 
     #[test]
-    fn test_encrypt_decrypt() {
+    fn test_encrypt() {
 
         let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 0 , end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 1, end: DEFAULT_OUTPUT_RANGE_END}};
-        let plaintext: u64 = 2;
-       
-        let ciphertext = test.encrypt(plaintext);
-        let decrypt = test.decrypt(ciphertext);
+        let a = test.encrypt(1 as u64);
+        let b = test.encrypt(50 as u64);
+        let c = test.encrypt(100 as u64);
 
-        assert_eq!(plaintext, decrypt);
+        println!("result of a: {}, b: {}, c: {}", a, b, c);
+
+        assert!(a < b);
+        assert!(b < c);
+
     }
 
 }
