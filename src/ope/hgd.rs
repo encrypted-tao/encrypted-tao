@@ -40,13 +40,13 @@
  
          }
  
-         let ret = 1.0 * tmp as f64 / ((u32::max_value() - 1) as f64);
+         let ret = tmp  / (u32::max_value() - 1);
  
-         return ret;
+         return ret as f64;
      }
  
  }
-  pub fn log_gamma(x: f64) -> f64 {
+  pub fn log_gamma(x: u64) -> f64 {
  
      let v = vec![8.333333333333333e-02, -2.777777777777778e-03,
       7.936507936507937e-04, -5.952380952380952e-04,
@@ -54,16 +54,17 @@
       6.410256410256410e-03, -2.955065359477124e-02,
       1.796443723688307e-01, -1.39243221690590e+00];
  
-     let mut x0 = x * 1.0;
-     let mut n = 0.0;
+     let x = x;
+     let mut x0 = x as f64;
+     let mut n: u64 = 0;
  
-     if x0 == 1.0 || x0 == 2.0 {
+     if x == 1 || x == 2 {
          return 0.0;
      }
  
-     else if x <= 7.0 {
-         n = 7.0 - x;
-         x0 = (x * 1.0) + n;
+     else if x <= 7 {
+         n = 7 - x;
+         x0 = (x + n) as f64;
      }
  
      let x2 = 1.0 / (x0 * x0);
@@ -72,13 +73,13 @@
  
      for i in (0..9).rev() {
          gl0 *= x2;
-         gl0 += v[i-1];
+         gl0 += v[i];
      }
-     let mut gl = gl0 / x0 + 0.5 * xp.log(std::f64::consts::E /* f64 */) + (x0 - 0.5) * x0.log(std::f64::consts::E /* f64 */) - x0;
+     let mut gl = gl0 / x0 + 0.5 * xp.ln() + (x0 - 0.5) * x0.ln()- x0;
  
-     if x<= 7.0 {
-         for i in 1..((n+1.0) as i16) {
-             gl -= (x0 - 1.0).log(std::f64::consts::E /* f64 */);
+     if x <= 7 {
+         for i in 1..(n+1) {
+             gl -= (x0 - 1.0).ln();
              x0 -= 1.0;
          }
      }
@@ -99,36 +100,36 @@
          let mut in_size = in_range.size();
          let mut out_size = out_range.size();
  
-         let mut index: f64 = (seed - out_range.start + 1) as f64;
+         let mut index: u64 = (seed - out_range.start + 1);
  
-         if in_size.eq(&out_size) {
+         if in_size == out_size {
  
              return in_range.start + (index as u64) - 1;
  
          }
  
-         let mut sample = 0.0;
+         let mut sample = 0;
  
-         if index.gt(&10.0) {
+         if index > 10 {
  
              let d1: f64 = 1.7155277699214135;
              let d2: f64 = 0.8989161620588988;
  
-             let min: f64 = cmp::min(in_size, out_size - in_size) as f64;
-             let size: f64 = (in_size + (out_size - in_size)) as f64;
-             let max: f64 = cmp::max(in_size, out_size - in_size) as f64;
+             let min = cmp::min(in_size, out_size - in_size);
+             let size: u64 = (in_size + (out_size - in_size));
+             let max = cmp::max(in_size, out_size - in_size);
  
-             let min_sample: f64 = cmp::min(index as i32, (size - index) as i32) as f64;
-             let d4: f64 = min as f64 / size;
-             let d5: f64 = 1.0 - d4;
-             let d6: f64 = min_sample * d4 + 0.5;
-             let d7: f64 = ((size - min) * index as f64 * d4 * d5 / (size - 1.0) + 0.5).sqrt();
+             let min_sample = cmp::min(index, (size - index));
+             let d4 = (min / size) as f64;
+             let d5 = 1.0 - d4;
+             let d6: f64 = min_sample as f64 * d4 + 0.5;
+             let d7: f64 = ((size - min) as f64 * index as f64 * d4 * d5 / (size - 1) as f64 + 0.5).sqrt();
              let d8: f64 = d1 * d7 + d2;
-             let d9: f64 = ((min_sample + 1.0) * (min + 1.0) / (size + 2.0)).floor();
-             let d10: f64 = log_gamma(d9+1.0) + log_gamma(min-d9+1.0) + log_gamma((min_sample-d9+1.0) as f64) + log_gamma((max-min_sample+d9+1.0) as f64);
-             let d11: f64 =  cmp::min((cmp::min(min_sample as u64, min as u64) + 1) as u64, (d6 + 16.0 * d7 as f64).floor() as u64) as f64;
+             let d9 = (((min_sample + 1) * (min + 1) / (size + 2)) as f64).floor() as u64;
+             let d10: f64 = log_gamma(d9+1) + log_gamma(min-d9+1) + log_gamma((min_sample-d9+1)) + log_gamma((max-min_sample+d9+1));
+             let d11 =  cmp::min((cmp::min(min_sample, min)), (d6 + 16.0 * d7 as f64).floor() as u64);
  
-             let mut Z: f64 = 0.0;
+             let mut Z = 0;
  
              loop {
                  let X = prng.draw();
@@ -136,22 +137,22 @@
  
                  let W = d6 + d8 * (Y - 0.5) / X;
  
-                 if W < 0.0 || W >= d11 {
+                 if W < 0.0 || W >= d11 as f64{
                      continue;
                  }
  
-                 Z = W.floor();
-                 let T = d10 - (log_gamma(Z+1.0) + log_gamma(min-Z+1.0) + log_gamma((min_sample-Z+1.0) as f64) + log_gamma(max-min_sample as f64+Z+1.0));
+                 Z = W.floor() as u64;
+                 let T = d10 - (log_gamma(Z+1) + log_gamma(min-Z+1) + log_gamma((min_sample-Z+1)) + log_gamma(max-min_sample+Z+1));
  
-                 if (X*(4.0-X)-3.0) < T {
+                 if (X*(4.0-X)-3.0) <= T {
                      break;
                  }
  
-                 if (X*(X-T)) >= 1.0 {
+                 if (X*(X - T)) >= 1.0 {
                      continue;
                  }
  
-                 if (2.0 * X.log(std::f64::consts::E /* f64 */) <= T) {
+                 if (2.0 * X.ln() <= T) {
                       break;
                  }
  
@@ -164,49 +165,49 @@
              }
  
              if min_sample < index {
-                 sample = (in_size - (Z as u64)) as f64;
+                 sample = (in_size - Z);
              }   
  
  
  
          } else {
-             let d1: f64 = (in_size + (out_size - in_size) - (index as u64)) as f64;
-             let d2: f64 = cmp::min(in_size, out_size - in_size) as f64;
+             let d1 = (in_size + (out_size - in_size) - (index));
+             let d2 = cmp::min(in_size, out_size - in_size);
  
              let mut Y = d2;
              let mut K = index;
  
-             while Y > 0.0  {
+             while Y > 0  {
  
                  let U = prng.draw();
-                 Y -= (U + Y / (d1 + K)).floor();
-                 K -= 1.0;
+                 Y -= (U + Y as f64 / (d1 + K) as f64).floor() as u64;
+                 K -= 1;
  
-                 if K == 0.0 {
+                 if K == 0 {
                       break;
                  }
  
              }
-             let Z = d2 - Y;
+             let Z = (d2 - Y) as u64;
  
              if in_size >= out_size - in_size {
  
-                 sample = index - Z as f64;
+                 sample = index - Z;
  
              }
  
-             sample = Z as f64;
+             sample = Z;
  
  
          }
  
-         if sample == 0.0 {
+         if sample == 0 {
  
              return in_range.start;
  
          } else {
  
-             return in_range.start + (sample - 1.0) as u64;
+             return in_range.start + (sample - 1) as u64;
          }
  
  }

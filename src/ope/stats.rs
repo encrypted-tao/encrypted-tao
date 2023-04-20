@@ -32,7 +32,7 @@ pub fn uniform_sample(mut in_range: Range, coins: String) -> u64 {
             
     while cur.size() > 1 {
                 
-        let mid = ((cur.start + cur.end) as u64 / 2) as u64;
+        let mid = ((cur.start + cur.end) / 2);
                 
         if array[index] == 0 {
             cur.end = mid;

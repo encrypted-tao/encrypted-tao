@@ -31,7 +31,6 @@ pub mod ope {
     use aes::Aes256;
     use aes::cipher::{
         BlockCipher, BlockEncrypt, BlockDecrypt};
-    use aes_prng::AesRng;
     use std::io::{Read, Write, Cursor};
     use std::fs::File;
     use std::str;
@@ -98,16 +97,15 @@ pub mod ope {
                 let out_size = out_range.size();
                 let in_edge = (in_range.start as i64 - 1) as u64 ;
                 let out_edge = (out_range.start as i64 -1) as u64;
-                let tmp = (out_size as f64 / 2.0).ceil() as u64;
-                let mid = out_edge + tmp;
+                let mid = out_edge + ((out_size as f64 / 2.0)).ceil() as u64;
 
                 // sanity check 
                 assert!(in_size <= out_size);
 
                 if in_range.size() == 1 {
                     let min_in = in_range.start;
-                    let tape = self.tape_gen(min_in);
-                    let ciphertext = uniform_sample(in_range, tape);
+                    let tape = self.tape_gen(plaintext);
+                    let ciphertext = uniform_sample(out_range, tape);
                     return ciphertext;
                 }
                 
@@ -139,8 +137,7 @@ pub mod ope {
                 let out_size = out_range.size();
                 let in_edge = in_range.start - 1;
                 let out_edge = out_range.start -1;
-                let tmp = (out_size as f64 / 2.0).ceil() as u64;
-                let mid = out_edge + tmp;
+                let mid = out_edge + ((out_size as f64 / 2.0)).ceil() as u64;
 
                 // sanity check
                 assert!(in_size <= out_size);
@@ -148,7 +145,7 @@ pub mod ope {
                 if in_range.size() == 1 {
                     let min_in = in_range.start;
                     let tape = self.tape_gen(min_in);
-                    let sample_text = uniform_sample(in_range, tape);
+                    let sample_text = uniform_sample(out_range, tape);
                     if sample_text.eq(&ciphertext) {
                         return min_in;
                     }
@@ -220,7 +217,7 @@ mod tests {
     fn test_encrypt() {
 
         let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 0 , end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 1, end: DEFAULT_OUTPUT_RANGE_END}};
-        let a = test.encrypt(1 as u64);
+        let a = test.encrypt(25 as u64);
         let b = test.encrypt(50 as u64);
         let c = test.encrypt(100 as u64);
 
@@ -234,7 +231,7 @@ mod tests {
     fn test_decrypt() {
        let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 0 , end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 1, end: DEFAULT_OUTPUT_RANGE_END}};
        
-       let num = test.encrypt(2367814);
+       let num = test.encrypt(23614);
 
        assert_eq!(num, test.decrypt(num));
     }
