@@ -6,6 +6,28 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+actix-rt = "2.8.0"
+actix-web = { version = "4.3.1", features = ["openssl"] }
+awc = { version = "3.1.1", features = ["openssl"] }
+dotenv = "0.15.0"
+futures = "0.3.28"
 pest = "2.5.6"
 pest_derive = "2.5.6"
-postgres = "0.19.5"
+serde = { version = "1.0.159", features = ["derive"] }
+serde_json = "1.0.95"
+serde_postgres = "0.2.0"
+tokio = { version = "1.27.0", features = [ "full" ] }
+tokio-postgres = "0.7.8"
+
+
+[[bin]]
+name="tao-server"
+path = "src/bin/server.rs"
+
+[[bin]]
+name="tao-cli"
+path = "src/bin/cli.rs"
+
+[[bin]]
+name="tao-interactive"
+path = "src/bin/interactive.rs"
