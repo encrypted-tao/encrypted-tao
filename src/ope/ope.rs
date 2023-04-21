@@ -172,8 +172,7 @@ pub mod ope {
          */
         pub fn tape_gen(&mut self, data: u64) ->  String {
 
-            let data_str = data.to_string();
-            
+            let data_str = data.to_string(); 
             let data_bytes = data_str.as_bytes();
         
             type HmacSha256 = Hmac<Sha256>;
@@ -233,7 +232,7 @@ mod tests {
        
        let num = test.encrypt(23614);
 
-       assert_eq!(num, test.decrypt(num));
+       assert_eq!(23614, test.decrypt(num));
     }
 
 }
