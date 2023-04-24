@@ -26,10 +26,13 @@
  use aes::cipher::{
     BlockCipher, BlockEncrypt, BlockDecrypt, KeyInit};
  use generic_array::{GenericArray, arr, ArrayLength};
+ use crypto::symmetriccipher::{SynchronousStreamCipher, Encryptor};
+ use crypto::aes::{KeySize, ctr};
 
- pub fn aes_init(key: &mut [u8]) -> Aes256 {
+ pub fn aes_init(result: &mut [u8]) ->  Box<dyn SynchronousStreamCipher + 'static> {
 
-    let aes_cipher = Aes256::new(&mut GenericArray::from_slice(key));
+    let aes_cipher =  ctr(KeySize::KeySize256, result, &[0;16]);
+    //Aes256::new(&mut GenericArray::from_slice(key));
 
     return aes_cipher;
  }

@@ -15,30 +15,30 @@
 use std::cmp;
 use std::str;
 use crate::ope::ope::ope::Range;
+use crate::ope::hgd::PRNG;
 
 /*
  * uniform_sample
  *      Sample uniform distribution using coins
  *      as a source of 'randomness'
 */
-pub fn uniform_sample(mut in_range: Range, coins: String) -> u64 {
+pub fn uniform_sample(mut in_range: Range, mut coins: PRNG) -> u64 {
        
     //let mut in_range = Range {start: in_start, end: in_end};
     let mut cur = in_range.copy();
     let mut index = 0;
  
- 
-    let array = coins.to_string().into_bytes();
-            
+    coins.cipher.process(&[0;32], &mut coins.tape);
+
     while cur.size() > 1 {
                 
         let mid = ((cur.start + cur.end) / 2);
                 
-        if array[index] == 0 {
+        if coins.tape[index] == 0 {
             cur.end = mid;
         }
      
-        if array[index] == 1 {
+        if coins.tape[index] == 1 {
             cur.start = mid + 1;
         }
  

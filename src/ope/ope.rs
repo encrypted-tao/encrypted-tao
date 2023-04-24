@@ -8,6 +8,7 @@
  *          https://faculty.cc.gatech.edu/~aboldyre/papers/bclo.pdf 
  *          https://people.csail.mit.edu/nickolai/papers/popa-mope-eprint.pdf 
  *          https://arxiv.org/pdf/2009.05679.pdf
+ *          https://github.com/husobee/ope 
  *
  */
 
@@ -16,19 +17,16 @@ extern crate rand;
 extern crate rand_distr;
 extern crate hmac;
 extern crate aes;
-extern crate sha2;
-
-//mod utils;
 
 
 pub mod ope {
 
     use crate::ope::utils::aes_init;
-    use crate::ope::hgd::hypergeo_sample;
+    use crate::ope::hgd::{hypergeo_sample, PRNG};
     use crate::ope::stats::uniform_sample;
     use hmac::{Hmac, Mac};
     use sha2::Sha256;
-    use aes::Aes256;
+    use aes::{Aes256};
     use aes::cipher::{
         BlockCipher, BlockEncrypt, BlockDecrypt};
     use std::io::{Read, Write, Cursor};
@@ -37,7 +35,8 @@ pub mod ope {
     use generic_array::{GenericArray, arr, ArrayLength};
     use std::cmp;
     use generic_array::typenum::{UInt, Integer};
- 
+    use crypto::symmetriccipher::{SynchronousStreamCipher, Encryptor};
+    
     pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
     pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
 
@@ -104,13 +103,16 @@ pub mod ope {
 
                 if in_range.size() == 1 {
                     let min_in = in_range.start;
-                    let tape = self.tape_gen(plaintext);
-                    let ciphertext = uniform_sample(out_range, tape);
+                    //let tape = self.tape_gen(plaintext);
+                    let output = self.tape_gen(plaintext);
+                    let ciphertext = uniform_sample(out_range, output);
                     return ciphertext;
                 }
                 
-                let tape = self.tape_gen(mid);
-                let samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, tape);
+                //let tape = self.tape_gen(mid);
+                let mut output = self.tape_gen(mid);
+
+                let samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
 
                 if plaintext <= samples {
                     return self.recursive_encrypt(plaintext, in_edge + 1, samples, out_edge + 1, mid);
@@ -144,8 +146,9 @@ pub mod ope {
                     
                 if in_range.size() == 1 {
                     let min_in = in_range.start;
-                    let tape = self.tape_gen(min_in);
-                    let sample_text = uniform_sample(out_range, tape);
+                    //let tape = self.tape_gen(min_in);
+                    let mut output = self.tape_gen(ciphertext);
+                    let sample_text = uniform_sample(out_range, output);
                     if sample_text.eq(&ciphertext) {
                         return min_in;
                     }
@@ -153,8 +156,9 @@ pub mod ope {
 
                 }
                 
-                let tape = self.tape_gen(mid);
-                let samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, tape);
+                //let tape = self.tape_gen(mid);
+                let mut output = self.tape_gen(mid);
+                let samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
 
                 if ciphertext <= mid {
                     return self.recursive_decrypt(ciphertext, in_edge + 1, samples, out_edge+1, mid)
@@ -170,7 +174,7 @@ pub mod ope {
          * tape_gen(self, data)
          *  Return: bit using of data
          */
-        pub fn tape_gen(&mut self, data: u64) ->  String {
+        pub fn tape_gen(&mut self, data: u64) ->  PRNG  {
 
             let data_str = data.to_string(); 
             let data_bytes = data_str.as_bytes();
@@ -182,21 +186,14 @@ pub mod ope {
             hmac_obj.update(&data_bytes);
 
             let hmac_res = hmac_obj.finalize();
+            let mut cipher = aes_init(&mut hmac_res.into_bytes());
+            let mut prng: PRNG  = PRNG {cipher: cipher, tape: [0;32]};
 
-            let aes_cipher = aes_init(&mut hmac_res.into_bytes());
-
-            let mut data_arr = GenericArray::from_slice(&data_bytes).clone();
-
-            aes_cipher.encrypt_block(&mut data_arr);
-
-            
-            return std::str::from_utf8(&data_arr).unwrap().to_string();
-
-        }
+            return prng;
 
     }
 }    
-
+}
 /*
  * OPE tests
  *  run via `cargo test`

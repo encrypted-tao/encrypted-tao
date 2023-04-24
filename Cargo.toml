@@ -6,22 +6,19 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-<<<<<<< HEAD
 rand="0.8.5"
-crypto="0.4.0"
+#crypto="0.4.0"
 rand_distr="0.4.3"
 hmac="0.12.1"
 aes="0.8.2"
 sha2="0.10.6"
 aes-prng="0.2.0"
 generic-array = "0.14.7"
-=======
 actix-rt = "2.8.0"
 actix-web = { version = "4.3.1", features = ["openssl"] }
 awc = { version = "3.1.1", features = ["openssl"] }
 dotenv = "0.15.0"
 futures = "0.3.28"
->>>>>>> ed955922cfc5f2cf113c71cdeee4f8c9916631d2
 pest = "2.5.6"
 pest_derive = "2.5.6"
 serde = { version = "1.0.159", features = ["derive"] }
@@ -29,7 +26,7 @@ serde_json = "1.0.95"
 serde_postgres = "0.2.0"
 tokio = { version = "1.27.0", features = [ "full" ] }
 tokio-postgres = "0.7.8"
-
+rust-crypto = "0.2.36"
 
 [[bin]]
 name="tao-server"

@@ -15,9 +15,11 @@
  use std::cmp;
  use std::str;
  use crate::ope::ope::ope::Range;
- 
+ use crypto::symmetriccipher::SynchronousStreamCipher;
+
  pub struct PRNG {
-     tape: String,
+     pub cipher: Box<dyn SynchronousStreamCipher + 'static>,
+     pub tape: [u8;32],
  }
  
  impl PRNG {
@@ -29,18 +31,18 @@
  
      pub fn draw(&mut self) -> f64 {
  
-         // sanity check
+         // sanity check, to do 
          assert_eq!(self.tape.len(), 32);
  
          let mut tmp = 0;
  
-         for coin in self.tape.chars() {
+         for coin in self.tape.iter() {
  
-             tmp = (tmp << 1) | coin.to_digit(10).unwrap();
+             tmp = (tmp << 1) | coin;
  
          }
  
-         let ret = tmp  / (u32::max_value() - 1);
+         let ret = tmp  / (u32::max_value() - 1) as u8;
  
          return ret as f64;
      }
@@ -91,10 +93,9 @@
    *      Sample hypergeometric distribution using coins
    *      as a source of 'randomness'
    */
- pub fn hypergeo_sample(in_start: u64, in_end:u64, out_start:u64, out_end:u64, seed: u64, coins: String) -> u64 {
+ pub fn hypergeo_sample(in_start: u64, in_end:u64, out_start:u64, out_end:u64, seed: u64, mut coins: PRNG) -> u64 {
  
- 
-         let mut prng = PRNG { tape: coins };
+         
          let mut in_range = Range {start: in_start, end: in_end};
          let mut out_range = Range {start: out_start, end: out_end};
          let mut in_size = in_range.size();
@@ -108,6 +109,9 @@
  
          }
  
+
+         coins.cipher.process(&[0;32], &mut coins.tape);
+         
          let mut sample = 0;
  
          if index > 10 {
@@ -132,8 +136,8 @@
              let mut Z = 0;
  
              loop {
-                 let X = prng.draw();
-                 let Y = prng.draw();
+                 let X = coins.draw();
+                 let Y = coins.draw();
  
                  let W = d6 + d8 * (Y - 0.5) / X;
  
@@ -179,7 +183,7 @@
  
              while Y > 0  {
  
-                 let U = prng.draw();
+                 let U = coins.draw();
                  Y -= (U + Y as f64 / (d1 + K) as f64).floor() as u64;
                  K -= 1;
  
