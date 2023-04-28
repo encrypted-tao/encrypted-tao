@@ -9,17 +9,21 @@
  *          https://faculty.cc.gatech.edu/~aboldyre/papers/bclo.pdf 
  *          https://people.csail.mit.edu/nickolai/papers/popa-mope-eprint.pdf 
  *          https://arxiv.org/pdf/2009.05679.pdf
+ *          https://www.researchgate.net/publication/220492268_ALGORITHM_668_H2PEC_sampling_from_the_hypergeometric_distribution 
+ *          https://netlib.org/toms-2014-06-10/668 
+ * 
  *
  */
 
  use std::cmp;
  use std::str;
  use crate::ope::ope::ope::Range;
+ use crate::ope::utils::{generate_tape};
  use crypto::symmetriccipher::SynchronousStreamCipher;
 
  pub struct PRNG {
-     pub cipher: Box<dyn SynchronousStreamCipher + 'static>,
-     pub tape: [u8;32],
+     pub tape: [u32; 32],
+     pub cipher:  Box<dyn SynchronousStreamCipher + 'static>,
  }
  
  impl PRNG {
@@ -28,28 +32,33 @@
       *      A pseudo-random number generator using
       *      the tape as a source of randomness
       */
- 
      pub fn draw(&mut self) -> f64 {
- 
-         // sanity check, to do 
-         assert_eq!(self.tape.len(), 32);
  
          let mut tmp = 0;
  
-         for coin in self.tape.iter() {
- 
+         let mut coins = generate_tape(self);
+
+         // sanity check
+         assert_eq!(coins.len(), 32);
+
+         for coin in coins {
+
              tmp = (tmp << 1) | coin;
  
          }
  
-         let ret = tmp  / (u32::max_value() - 1) as u8;
- 
-         return ret as f64;
+         let ret = tmp as f64 / (u32::max_value() - 1) as f64;
+
+         // sanity check 
+         assert!(0.0 <= ret && ret <= 1.0);
+
+         return ret;
      }
  
  }
   pub fn log_gamma(x: u64) -> f64 {
  
+     println!("in log gamma\n");
      let v = vec![8.333333333333333e-02, -2.777777777777778e-03,
       7.936507936507937e-04, -5.952380952380952e-04,
       8.417508417508418e-04, -1.917526917526918e-03,
@@ -95,6 +104,7 @@
    */
  pub fn hypergeo_sample(in_start: u64, in_end:u64, out_start:u64, out_end:u64, seed: u64, mut coins: PRNG) -> u64 {
  
+        println!("start of hgd\n");
          
          let mut in_range = Range {start: in_start, end: in_end};
          let mut out_range = Range {start: out_start, end: out_end};
@@ -102,20 +112,22 @@
          let mut out_size = out_range.size();
  
          let mut index: u64 = (seed - out_range.start + 1);
- 
+         let mut sample = 0;
+       
+
+         // sanity checks
+         assert!(in_size > 0 && out_size > 0);
+         assert!(out_range.contains(seed));
+         assert!(in_size <= out_size);
+
          if in_size == out_size {
+            /* Input and output range sizes are equal */
  
              return in_range.start + (index as u64) - 1;
  
-         }
- 
-
-         coins.cipher.process(&[0;32], &mut coins.tape);
-         
-         let mut sample = 0;
- 
-         if index > 10 {
- 
+         } else if index > 10 {
+            /* If Index > 10, H2PE (Hypergeometric-2 Points-Exponential Tails */
+            println!("index > 10\n");
              let d1: f64 = 1.7155277699214135;
              let d2: f64 = 0.8989161620588988;
  
@@ -136,23 +148,23 @@
              let mut Z = 0;
  
              loop {
+                
                  let X = coins.draw();
                  let Y = coins.draw();
- 
-                 let W = d6 + d8 * (Y - 0.5) / X;
- 
-                 if W < 0.0 || W >= d11 as f64{
+                 let mut W = d6 + d8 * (Y - 0.5) / X;
+
+                 if W < 0.0 || W >= d11 as f64 {
                      continue;
                  }
- 
                  Z = W.floor() as u64;
                  let T = d10 - (log_gamma(Z+1) + log_gamma(min-Z+1) + log_gamma((min_sample-Z+1)) + log_gamma(max-min_sample+Z+1));
- 
+                 
                  if (X*(4.0-X)-3.0) <= T {
                      break;
                  }
  
-                 if (X*(X - T)) >= 1.0 {
+                 if (X*(X - T)) as u64 >= 1 {
+                     
                      continue;
                  }
  
@@ -161,7 +173,7 @@
                  }
  
              }
- 
+             println!("post loooop\n");
              sample = Z;
  
               if in_size >= out_size - in_size {
@@ -172,9 +184,10 @@
                  sample = (in_size - Z);
              }   
  
- 
- 
          } else {
+            /* If index <= 10, Inverse Transformation */
+            println!("Index <= 10\n");
+             out_size = out_size - in_size;
              let d1 = (in_size + (out_size - in_size) - (index));
              let d2 = cmp::min(in_size, out_size - in_size);
  
@@ -204,7 +217,7 @@
  
  
          }
- 
+         println!("returning hgd\n");
          if sample == 0 {
  
              return in_range.start;

@@ -1,5 +1,5 @@
 mod ope;
-mod tao;
+/*mod tao;
 
 fn main() {
     let qs = tao::parser::parse(
@@ -20,3 +20,4 @@ fn main() {
         println!("SQL Query: {:#?}", s);
     }
 }
+*/

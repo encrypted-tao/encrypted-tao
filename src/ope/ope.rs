@@ -21,7 +21,7 @@ extern crate aes;
 
 pub mod ope {
 
-    use crate::ope::utils::aes_init;
+    use crate::ope::utils::{convert_bitstring, aes_init};
     use crate::ope::hgd::{hypergeo_sample, PRNG};
     use crate::ope::stats::uniform_sample;
     use hmac::{Hmac, Mac};
@@ -36,7 +36,9 @@ pub mod ope {
     use std::cmp;
     use generic_array::typenum::{UInt, Integer};
     use crypto::symmetriccipher::{SynchronousStreamCipher, Encryptor};
-    
+    use crypto::buffer::RefReadBuffer;
+
+
     pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
     pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
 
@@ -90,6 +92,7 @@ pub mod ope {
         
         pub fn recursive_encrypt(&mut self, plaintext: u64,  in_start: u64, in_end:u64, out_start:u64, out_end:u64) -> u64 {
 
+                println!("recursive encrypt\n");
                 let mut in_range = Range {start: in_start, end: in_end};
                 let mut out_range = Range {start: out_start, end: out_end};
                 let in_size = in_range.size();
@@ -103,13 +106,11 @@ pub mod ope {
 
                 if in_range.size() == 1 {
                     let min_in = in_range.start;
-                    //let tape = self.tape_gen(plaintext);
                     let output = self.tape_gen(plaintext);
                     let ciphertext = uniform_sample(out_range, output);
                     return ciphertext;
                 }
                 
-                //let tape = self.tape_gen(mid);
                 let mut output = self.tape_gen(mid);
 
                 let samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
@@ -133,6 +134,7 @@ pub mod ope {
 
         pub fn recursive_decrypt(&mut self, ciphertext: u64, in_start: u64, in_end:u64, out_start:u64, out_end:u64) -> u64 {
             
+                println!("recursive decrypt\n");
                 let mut in_range = Range {start: in_start, end: in_end};
                 let mut out_range = Range {start: out_start, end: out_end};
                 let in_size = in_range.size();
@@ -146,7 +148,6 @@ pub mod ope {
                     
                 if in_range.size() == 1 {
                     let min_in = in_range.start;
-                    //let tape = self.tape_gen(min_in);
                     let mut output = self.tape_gen(ciphertext);
                     let sample_text = uniform_sample(out_range, output);
                     if sample_text.eq(&ciphertext) {
@@ -155,8 +156,7 @@ pub mod ope {
                     // else -> failure
 
                 }
-                
-                //let tape = self.tape_gen(mid);
+
                 let mut output = self.tape_gen(mid);
                 let samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
 
@@ -172,9 +172,11 @@ pub mod ope {
 
         /*
          * tape_gen(self, data)
-         *  Return: bit using of data
+         *  Return: bit string of data
          */
-        pub fn tape_gen(&mut self, data: u64) ->  PRNG  {
+        pub fn tape_gen(&mut self, data: u64) ->  PRNG {
+
+            println!("in tape gen\n");
 
             let data_str = data.to_string(); 
             let data_bytes = data_str.as_bytes();
@@ -186,9 +188,10 @@ pub mod ope {
             hmac_obj.update(&data_bytes);
 
             let hmac_res = hmac_obj.finalize();
-            let mut cipher = aes_init(&mut hmac_res.into_bytes());
-            let mut prng: PRNG  = PRNG {cipher: cipher, tape: [0;32]};
 
+            let mut cipher = aes_init(&mut hmac_res.clone().into_bytes());
+            
+            let prng = PRNG{cipher:cipher, tape: [0; 32]};
             return prng;
 
     }

@@ -16,34 +16,41 @@ use std::cmp;
 use std::str;
 use crate::ope::ope::ope::Range;
 use crate::ope::hgd::PRNG;
+use crate::ope::utils::{generate_tape};
 
 /*
  * uniform_sample
  *      Sample uniform distribution using coins
  *      as a source of 'randomness'
 */
-pub fn uniform_sample(mut in_range: Range, mut coins: PRNG) -> u64 {
+pub fn uniform_sample(mut in_range: Range, mut prng: PRNG) -> u64 {
+    
+    println!("start of uniform\n");
        
     //let mut in_range = Range {start: in_start, end: in_end};
     let mut cur = in_range.copy();
     let mut index = 0;
- 
-    coins.cipher.process(&[0;32], &mut coins.tape);
 
+    let mut coins = generate_tape(&mut prng);
+
+    
     while cur.size() > 1 {
                 
         let mid = ((cur.start + cur.end) / 2);
                 
-        if coins.tape[index] == 0 {
+        if coins[index] == 0 {
             cur.end = mid;
         }
      
-        if coins.tape[index] == 1 {
+        if coins[index] == 1 {
             cur.start = mid + 1;
         }
  
         index = index + 1;
     }
+    println!("returning uniform\n");
+    assert!(cur.size() == 1);
+    assert!(cur.start >= 0 && cur.start <= 1);
     return cur.start;
  
 }
