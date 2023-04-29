@@ -97,8 +97,10 @@ pub mod ope {
                 let mut out_range = Range {start: out_start, end: out_end};
                 let in_size = in_range.size();
                 let out_size = out_range.size();
-                let in_edge = (in_range.start as i64 - 1) as u64 ;
-                let out_edge = (out_range.start as i64 -1) as u64;
+                let mut in_edge = in_range.start;
+                in_edge.checked_sub(1);
+                let mut out_edge = out_range.start;
+                out_edge.checked_sub(1);
                 let mid = out_edge + ((out_size as f64 / 2.0)).ceil() as u64;
 
                 // sanity check 
@@ -116,8 +118,14 @@ pub mod ope {
                 let samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
 
                 if plaintext <= samples {
+                    in_edge.checked_add(1);
+                    out_edge.checked_add(1);
                     return self.recursive_encrypt(plaintext, in_edge + 1, samples, out_edge + 1, mid);
                 }  else {
+                    samples.checked_add(1);
+                    in_edge.checked_add(in_size);
+                    mid.checked_add(1);
+                    out_edge.checked_add(out_size);
                     return self.recursive_encrypt(plaintext, samples + 1, in_edge + in_size, mid + 1, out_edge + out_size);
                 }
 
@@ -139,8 +147,10 @@ pub mod ope {
                 let mut out_range = Range {start: out_start, end: out_end};
                 let in_size = in_range.size();
                 let out_size = out_range.size();
-                let in_edge = in_range.start - 1;
-                let out_edge = out_range.start -1;
+                let mut in_edge = in_range.start;
+                in_edge.checked_sub(1);
+                let mut out_edge = out_range.start;
+                out_end.checked_sub(1);
                 let mid = out_edge + ((out_size as f64 / 2.0)).ceil() as u64;
 
                 // sanity check
@@ -161,8 +171,14 @@ pub mod ope {
                 let samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
 
                 if ciphertext <= mid {
+                    in_edge.checked_add(1);
+                    out_edge.checked_add(1);
                     return self.recursive_decrypt(ciphertext, in_edge + 1, samples, out_edge+1, mid)
                 }  else {
+                    samples.checked_add(1);
+                    in_edge.checked_add(in_size);
+                    mid.checked_add(1);
+                    out_edge.checked_add(out_size);
                     return self.recursive_decrypt(ciphertext, samples+1, in_edge+in_size, mid+1, out_edge+out_size);
                 }
 
@@ -208,14 +224,14 @@ mod tests {
     use crate::ope::ope::ope::OPE;
     use crate::ope::ope::ope::Range;
 
-    pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
-    pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
+    pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -2;
+    pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 2;
 
 
     #[test]
     fn test_encrypt() {
 
-        let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 0 , end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 1, end: DEFAULT_OUTPUT_RANGE_END}};
+        let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 1, end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 1, end: DEFAULT_OUTPUT_RANGE_END}};
         let a = test.encrypt(25 as u64);
         let b = test.encrypt(50 as u64);
         let c = test.encrypt(100 as u64);

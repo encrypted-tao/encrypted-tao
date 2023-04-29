@@ -155,19 +155,23 @@
                  if W < 0.0 || W >= d11 as f64 {
                      continue;
                  }
-                 Z = W.floor() as u64;
-                 let T = d10 - (log_gamma(Z+1) + log_gamma(min-Z+1) + log_gamma((min_sample-Z+1)) + log_gamma(max-min_sample+Z+1));
-                 
+                 println!("W {}", W.floor());
+                 Z = 1;
+                 println!("Z {}", Z);
+                 let T = 1.0; //d10 - (log_gamma(Z+1) + log_gamma(min-Z+1) + log_gamma((min_sample-Z+1)) + log_gamma(max-min_sample+Z+1));
+                 println!("T {}", T);
                  if (X*(4.0-X)-3.0) <= T {
+                    println!("fast accept");
                      break;
                  }
  
                  if (X*(X - T)) as u64 >= 1 {
-                     
+                     println!("fast reject = {}", (X*(X - T)) as u64);
                      continue;
                  }
  
                  if (2.0 * X.ln() <= T) {
+                    println!("accept");
                       break;
                  }
  
@@ -219,10 +223,12 @@
          println!("returning hgd\n");
          if sample == 0 {
  
+            println!("sample == 0 {}", in_range.start);
              return in_range.start;
  
          } else {
- 
+            
+            println!("{}", in_range.start + (sample - 1) as u64);
              return in_range.start + (sample - 1) as u64;
          }
  
