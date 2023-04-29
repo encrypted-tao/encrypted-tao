@@ -98,15 +98,21 @@ pub mod ope {
                 let in_size = in_range.size();
                 let out_size = out_range.size();
                 let mut in_edge = in_range.start;
-                in_edge.checked_sub(1);
+                if in_range.start.checked_sub(1).is_some() {
+                    in_edge -= 1;
+                }
+                
                 let mut out_edge = out_range.start;
-                out_edge.checked_sub(1);
-                let mid = out_edge + ((out_size as f64 / 2.0)).ceil() as u64;
+                if out_range.start.checked_sub(1).is_some() {
+                    out_edge -= 1;
+                }
+                let mut mid = out_edge + ((out_size as f64 / 2.0)).ceil() as u64;
 
                 // sanity check 
                 assert!(in_size <= out_size);
 
                 if in_range.size() == 1 {
+                    println!("size of input range is 1");
                     let min_in = in_range.start;
                     let output = self.tape_gen(plaintext);
                     let ciphertext = uniform_sample(out_range, output);
@@ -115,18 +121,31 @@ pub mod ope {
                 
                 let mut output = self.tape_gen(mid);
 
-                let samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
+                let mut samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
 
                 if plaintext <= samples {
-                    in_edge.checked_add(1);
-                    out_edge.checked_add(1);
-                    return self.recursive_encrypt(plaintext, in_edge + 1, samples, out_edge + 1, mid);
+                    if in_edge.checked_add(1).is_some() {
+                        in_edge += 1;
+                    }
+                    if out_edge.checked_add(1).is_some() {
+                        out_edge += 1;
+                    }
+                    println!("CHECK {}", out_edge);
+                    return self.recursive_encrypt(plaintext, in_edge, samples, out_edge, mid);
                 }  else {
-                    samples.checked_add(1);
-                    in_edge.checked_add(in_size);
-                    mid.checked_add(1);
-                    out_edge.checked_add(out_size);
-                    return self.recursive_encrypt(plaintext, samples + 1, in_edge + in_size, mid + 1, out_edge + out_size);
+                    if samples.checked_add(1).is_some() {
+                        samples += 1;
+                    }
+                    if in_edge.checked_add(in_size).is_some() {
+                        in_edge += in_size;
+                    }
+                    if mid.checked_add(1).is_some() {
+                        mid += 1;
+                    }
+                    if out_edge.checked_add(out_size).is_some() {
+                        out_edge += out_size;
+                    }
+                    return self.recursive_encrypt(plaintext, samples, in_edge, mid, out_edge );
                 }
 
         }   
@@ -147,11 +166,17 @@ pub mod ope {
                 let mut out_range = Range {start: out_start, end: out_end};
                 let in_size = in_range.size();
                 let out_size = out_range.size();
+
                 let mut in_edge = in_range.start;
-                in_edge.checked_sub(1);
-                let mut out_edge = out_range.start;
-                out_end.checked_sub(1);
-                let mid = out_edge + ((out_size as f64 / 2.0)).ceil() as u64;
+                if in_range.start.checked_sub(1).is_some() {
+                    in_edge -= 1;
+                }
+                
+                let mut out_edge = out_range.start; 
+                if out_range.start.checked_sub(1).is_some() {
+                    out_edge -= 1;
+                }
+                let mut mid = out_edge + ((out_size as f64 / 2.0)).ceil() as u64;
 
                 // sanity check
                 assert!(in_size <= out_size);
@@ -168,18 +193,30 @@ pub mod ope {
                 }
 
                 let mut output = self.tape_gen(mid);
-                let samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
+                let mut samples = hypergeo_sample(in_start, in_edge, out_start, out_end, mid, output);
 
                 if ciphertext <= mid {
-                    in_edge.checked_add(1);
-                    out_edge.checked_add(1);
-                    return self.recursive_decrypt(ciphertext, in_edge + 1, samples, out_edge+1, mid)
+                    if in_edge.checked_add(1).is_some() {
+                        in_edge += 1;
+                    }
+                    if out_edge.checked_add(1).is_some() {
+                        out_edge += 1;
+                    }
+                    return self.recursive_decrypt(ciphertext, in_edge, samples, out_edge, mid)
                 }  else {
-                    samples.checked_add(1);
-                    in_edge.checked_add(in_size);
-                    mid.checked_add(1);
-                    out_edge.checked_add(out_size);
-                    return self.recursive_decrypt(ciphertext, samples+1, in_edge+in_size, mid+1, out_edge+out_size);
+                    if samples.checked_add(1).is_some() {
+                        samples += 1;
+                    }
+                    if in_edge.checked_add(in_size).is_some() {
+                        in_edge += in_size;
+                    }
+                    if mid.checked_add(1).is_some() {
+                        mid += 1;
+                    }
+                    if out_edge.checked_add(out_size).is_some() {
+                        out_edge += out_size;
+                    }
+                    return self.recursive_decrypt(ciphertext, samples, in_edge, mid, out_edge);
                 }
 
 

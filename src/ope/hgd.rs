@@ -109,7 +109,7 @@
          let mut out_range = Range {start: out_start, end: out_end};
          let mut in_size = in_range.size();
          let mut out_size = out_range.size();
- 
+
          let mut index: u64 = (seed - out_range.start + 1);
          let mut sample = 0;
        
@@ -152,6 +152,7 @@
                  let Y = coins.draw();
                  let mut W = d6 + d8 * (Y - 0.5) / X;
 
+                println!("X draw {}", X);
                  if W < 0.0 || W >= d11 as f64 {
                      continue;
                  }
