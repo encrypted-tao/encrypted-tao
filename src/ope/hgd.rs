@@ -163,7 +163,7 @@
                  }
 
                  if (X*(X - T))  >= 1.0 {
-                     println!("fast reject");
+                     //println!("fast reject");
                      continue;
                  }
  
