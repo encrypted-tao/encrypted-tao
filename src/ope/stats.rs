@@ -27,7 +27,6 @@ pub fn uniform_sample(mut in_range: Range, mut prng: PRNG) -> u64 {
     
     println!("start of uniform\n");
        
-    //let mut in_range = Range {start: in_start, end: in_end};
     let mut cur = in_range.copy();
     let mut index = 0;
 
@@ -36,7 +35,7 @@ pub fn uniform_sample(mut in_range: Range, mut prng: PRNG) -> u64 {
     
     while cur.size() > 1 {
                 
-        let mid = ((cur.start + cur.end) / 2);
+        let mid = ((cur.start + cur.end) / 2) as u64;
                 
         if coins[index] == 0 {
             cur.end = mid;
@@ -47,11 +46,9 @@ pub fn uniform_sample(mut in_range: Range, mut prng: PRNG) -> u64 {
         }
  
         index += 1;
-        println!("INDEX {}", index);
     }
-    println!("returning uniform\n");
-    println!("cur.start in uniform {}", cur.start);
     assert!(cur.size() == 1);
+
     return cur.start;
  
 }

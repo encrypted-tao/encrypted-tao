@@ -63,7 +63,6 @@
       6.410256410256410e-03, -2.955065359477124e-02,
       1.796443723688307e-01, -1.39243221690590e+00];
  
-     //println!("X in log gamma {}", x);
      let x = x;
      let mut x0 = x as f64;
      let mut n: u64 = 0;
@@ -102,8 +101,7 @@
    *      as a source of 'randomness'
    */
  pub fn hypergeo_sample(in_start: u64, in_end:u64, out_start:u64, out_end:u64, seed: u64, mut coins: PRNG) -> u64 {
- 
-        println!("start of hgd\n");
+
          
          let mut in_range = Range {start: in_start, end: in_end};
          let mut out_range = Range {start: out_start, end: out_end};
@@ -127,7 +125,6 @@
          } else if index > 10 {
 
             /* If Index > 10, H2PE (Hypergeometric-2 Points-Exponential Tails */
-            println!("index > 10\n");
 
              let d1: f64 = 1.7155277699214135;
              let d2: f64 = 0.8989161620588988;
@@ -177,7 +174,6 @@
                  }
  
              }
-             println!("post loooop\n");
              sample = Z;
  
               if in_size >= out_size - in_size {
@@ -188,10 +184,10 @@
                  sample = (in_size - Z);
              }   
  
-             println!("sample check: {}", sample);
          } else {
             /* If index <= 10, Inverse Transformation */
             println!("Index <= 10\n");
+
              out_size = out_size - in_size;
              let d1 = (in_size + (out_size - in_size) - (index));
              let d2 = cmp::min(in_size, out_size - in_size);
@@ -222,16 +218,12 @@
  
  
          }
-         println!("returning hgd\n");
          if sample == 0 {
- 
-            println!("sample == 0 {}", in_range.start);
              return in_range.start;
  
          } else {
-            
-            println!("{}", in_range.start + (sample - 1) as u64);
-             return in_range.start + (sample - 1) as u64;
+            assert!(in_range.contains(sample));
+            return in_range.start + sample as u64 - 1;
          }
  
  }
