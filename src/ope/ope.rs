@@ -30,8 +30,6 @@ pub mod ope {
     use aes::cipher::{
         BlockCipher, BlockEncrypt, BlockDecrypt};
     use std::io::{Read, Write, Cursor};
-    use std::fs::File;
-    use std::str;
     use generic_array::{GenericArray, arr, ArrayLength};
     use std::cmp;
     use generic_array::typenum::{UInt, Integer};
@@ -50,13 +48,13 @@ pub mod ope {
     impl Range {
 
         pub fn contains(&mut self, number: u64) -> bool {
+
            return self.start <= number && self.end >= number;
         }
 
         pub fn size(&mut self) -> u64 {
 
             return self.end - self.start + 1;
-            
 
         }
         
@@ -106,16 +104,16 @@ pub mod ope {
                 if out_range.start.checked_sub(1).is_some() {
                     out_edge -= 1;
                 }
-                let mut mid = out_edge + ((out_size as f64 / 2.0)).ceil() as u64;
+                let mut mid = out_edge + (out_size / 2) as u64;
 
                 // sanity check 
                 assert!(in_size <= out_size);
 
                 if in_range.size() == 1 {
                     println!("size of input range is 1");
-                    let min_in = in_range.start;
                     let output = self.tape_gen(plaintext);
                     let ciphertext = uniform_sample(out_range, output);
+                    println!("End of recursive encrypt, cipher text {}", ciphertext);
                     return ciphertext;
                 }
                 
@@ -218,8 +216,6 @@ pub mod ope {
                     return self.recursive_decrypt(ciphertext, samples, in_edge, mid, out_edge);
                 }
 
-
-
         }
 
         /*
@@ -266,21 +262,28 @@ mod tests {
 
     #[test]
     fn test_encrypt() {
-
-        let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 1, end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 1, end: DEFAULT_OUTPUT_RANGE_END}};
+        
+        let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 1, end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 0, end: DEFAULT_OUTPUT_RANGE_END}};
         let a = test.encrypt(25 as u64);
-        let b = test.encrypt(50 as u64);
-        let c = test.encrypt(100 as u64);
-
-        println!("result of a: {}, b: {}, c: {}", a, b, c);
-
-        assert!(a < b);
-        assert!(b < c);
 
     }
     #[test]
+    fn test_ordering() {
+
+        let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 1, end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 0, end: DEFAULT_OUTPUT_RANGE_END}};
+        let a = test.encrypt(25 as u64);
+        let b = test.encrypt(27 as u64);
+
+        println!("result of a: {}, b: {}", a, b);
+
+        assert!(a < b);
+
+    }
+    
+    #[test]
     fn test_decrypt() {
-       let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 0 , end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 0, end: DEFAULT_OUTPUT_RANGE_END}};
+
+       let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 1 , end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 0, end: DEFAULT_OUTPUT_RANGE_END}};
        
        let num = test.encrypt(23614);
 

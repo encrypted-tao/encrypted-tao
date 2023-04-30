@@ -84,7 +84,7 @@
          gl0 *= x2;
          gl0 += v[i];
      }
-     let mut gl = gl0 / x0 + 0.5 * xp.ln() + (x0 - 0.5) * x0.ln()- x0;
+     let mut gl = gl0 / x0 + 0.5 * xp.ln() + (x0 - 0.5) * x0.ln() - x0;
  
      if x <= 7 {
          for i in 1..(n+1) {
@@ -107,11 +107,9 @@
          let mut out_range = Range {start: out_start, end: out_end};
          let mut in_size = in_range.size();
          let mut out_size = out_range.size();
-
-         let mut index: u64 = (seed - out_range.start + 1);
+         let mut index: u64 = seed - out_range.start + 1;
          let mut sample = 0;
        
-
          // sanity checks
          assert!(in_size > 0 && out_size > 0);
          assert!(out_range.contains(seed));
@@ -119,8 +117,7 @@
 
          if in_size == out_size {
             /* Input and output range sizes are equal */
- 
-             return in_range.start + (index as u64) - 1;
+             return in_range.start + index - 1;
  
          } else if index > 10 {
 
@@ -134,6 +131,7 @@
              let max = cmp::max(in_size, out_size - in_size);
  
              let min_sample = cmp::min(index, (size - index));
+
              let d4 = (min as f64 / size as f64) as f64;
              let d5 = 1.0 - d4;
              let d6: f64 = min_sample as f64 * d4 + 0.5;
@@ -148,7 +146,7 @@
                 
                  let X = coins.draw();
                  let Y = coins.draw();
-                 
+
                  let mut W = d6 + d8 * (Y - 0.5) / X;
 
                  if W < 0.0 || W >= d11 as f64 {
@@ -158,13 +156,14 @@
 
                  let T = d10 - (log_gamma(Z+1) + log_gamma(min-Z+1) + log_gamma((min_sample-Z+1)) + log_gamma(max-min_sample+Z+1));
 
+
                  if (X*(4.0-X)-3.0) <= T {
                     println!("fast accept");
                      break;
                  }
 
                  if (X*(X - T))  >= 1.0 {
-                     //println!("fast reject");
+                     println!("fast reject");
                      continue;
                  }
  
@@ -175,8 +174,8 @@
  
              }
              sample = Z;
- 
-              if in_size >= out_size - in_size {
+        
+              if in_size > (out_size - in_size) {
                  sample = min_sample - Z;
              }
  
@@ -222,8 +221,9 @@
              return in_range.start;
  
          } else {
+            sample = in_range.start + sample as u64 - 1;
             assert!(in_range.contains(sample));
-            return in_range.start + sample as u64 - 1;
+            return sample;
          }
  
  }
