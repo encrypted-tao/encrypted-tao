@@ -130,7 +130,6 @@ pub mod ope {
                     if out_edge.checked_add(1).is_some() {
                         out_edge += 1;
                     }
-                    println!("CHECK {}", out_edge);
                     return self.recursive_encrypt(plaintext, in_edge, samples, out_edge, mid);
                 }  else {
                     if samples.checked_add(1).is_some() {
@@ -281,7 +280,7 @@ mod tests {
     }
     #[test]
     fn test_decrypt() {
-       let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 0 , end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 1, end: DEFAULT_OUTPUT_RANGE_END}};
+       let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 0 , end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 0, end: DEFAULT_OUTPUT_RANGE_END}};
        
        let num = test.encrypt(23614);
 

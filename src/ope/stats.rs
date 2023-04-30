@@ -46,11 +46,12 @@ pub fn uniform_sample(mut in_range: Range, mut prng: PRNG) -> u64 {
             cur.start = mid + 1;
         }
  
-        index = index + 1;
+        index += 1;
+        println!("INDEX {}", index);
     }
     println!("returning uniform\n");
+    println!("cur.start in uniform {}", cur.start);
     assert!(cur.size() == 1);
-    assert!(cur.start >= 0 && cur.start <= 1);
     return cur.start;
  
 }
