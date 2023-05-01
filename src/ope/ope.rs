@@ -106,6 +106,7 @@ pub mod ope {
                 }
                 let mut mid = out_edge + (out_size / 2) as u64;
 
+                println!("mid {}", mid);
                 // sanity check 
                 assert!(in_size <= out_size);
 
@@ -121,18 +122,20 @@ pub mod ope {
 
                 let mut samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
 
+                println!("plaintext {} <= samples {}", plaintext, samples);
                 if plaintext <= samples {
                     if in_edge.checked_add(1).is_some() {
                         in_edge += 1;
-                    }
+                    } 
                     if out_edge.checked_add(1).is_some() {
                         out_edge += 1;
                     }
                     return self.recursive_encrypt(plaintext, in_edge, samples, out_edge, mid);
                 }  else {
+                    println!("in_start {}, in_end {}, end_start {}, end_end {}", samples, in_edge, mid, out_edge);
                     if samples.checked_add(1).is_some() {
                         samples += 1;
-                    }
+                    } 
                     if in_edge.checked_add(in_size).is_some() {
                         in_edge += in_size;
                     }
@@ -142,6 +145,7 @@ pub mod ope {
                     if out_edge.checked_add(out_size).is_some() {
                         out_edge += out_size;
                     }
+                    println!("in_start {}, in_end {}, end_start {}, end_end {}", samples, in_edge, mid, out_edge);
                     return self.recursive_encrypt(plaintext, samples, in_edge, mid, out_edge );
                 }
 
@@ -237,7 +241,7 @@ pub mod ope {
 
             let mut cipher = aes_init(&mut hmac_res.clone().into_bytes());
             
-            let prng = PRNG{cipher:cipher, tape: [0; 32]};
+            let prng = PRNG { cipher:cipher, tape: [0; 96] };
 
             return prng;
 
@@ -262,22 +266,22 @@ mod tests {
     #[test]
     fn test_encrypt() {
 
-        let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 0, end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 0, end: DEFAULT_OUTPUT_RANGE_END}};
-        let a = test.encrypt(25 as u64);
-
-        assert_eq!(a, 1019448);
+        let mut test = OPE { key:"ope-testing-key".to_string(), in_range: Range {start: 1, end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 1, end: DEFAULT_OUTPUT_RANGE_END}};
+        let a = test.encrypt(24 as u64);
+        assert_eq!(a, 786439);
     }
+    
     #[test]
     fn test_ordering() {
 
         let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 0 as u64, end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 0 as u64, end: DEFAULT_OUTPUT_RANGE_END}};
         let a = test.encrypt(25 as u64);
-        let b = test.encrypt(2500 as u64);
-        /*
+        let b = test.encrypt(200 as u64);
         let c = test.encrypt(2500 as u64);
         println!("result of a: {}, b: {}, c: {}", a, b, c);
-        */
+        
         assert!(a < b);
+        assert!(b < c);
 
     }
     /*

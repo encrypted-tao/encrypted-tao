@@ -39,24 +39,26 @@
     return aes_cipher;
  }
  
- pub fn generate_tape(prng: &mut PRNG) ->  [u32; 32] {
+ pub fn generate_tape(prng: &mut PRNG) ->  [u32; 96] {
 
    let mut tape = [b'\x00'; 16];
+
    prng.cipher.process(&[b'\x00';16], &mut tape);
 
    let mut bin_tape = convert_bitstring(tape);
-     
+   
    return bin_tape;
  }
  
  pub fn generate_bytes(data: &mut [u8; 16]) -> [Vec<u8>; 16] {
    
       let mut bin: [Vec<u8>; 16] =  Default::default();
-      let mut binary_string = "".to_string();
+
       for i in 0..16 {
          let mut tmp: String =  data[i].to_string();
          bin[i] = tmp.clone().as_bytes().to_vec();
       }
+
       return bin;
 
    }
@@ -64,28 +66,19 @@
 
    return format!("{:b}", byte[0]);
  }
- pub fn convert_bitstring(mut data: [u8; 16]) -> [u32; 32] {
+ pub fn convert_bitstring(mut data: [u8; 16]) -> [u32; 96] {
 
       let mut bytes = generate_bytes(&mut data);
-      let mut ret = [0; 32]; 
+      let mut ret = [0; 96]; 
       let mut index = 0;
 
       for mut byte in bytes {
-         if index == 32 {
-            return ret;
-         }
          let mut bit = byte_to_bits(&mut byte);
-         if index == 32 {
-            return ret;
-         }
          for i in bit.chars() {
-            if index == 32 {
-               return ret;
-            }
             ret[index] = i.to_digit(2, /* u32 */).unwrap();
             index += 1;
           }
       }
-      
+      //println!("convert bit string {ret:?}");
       return ret;
  }
