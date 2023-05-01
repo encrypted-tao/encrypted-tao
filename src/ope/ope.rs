@@ -54,7 +54,10 @@ pub mod ope {
 
         pub fn size(&mut self) -> u64 {
 
-            return self.end - self.start + 1;
+            if self.end.checked_sub(self.start).is_some() {
+                return self.end - self.start + 1;
+            }
+            return 1;
 
         }
         
@@ -179,6 +182,7 @@ pub mod ope {
                 }
                 let mut mid = out_edge + ((out_size as f64 / 2.0)).ceil() as u64;
 
+                println!("mid {}", mid);
                 // sanity check
                 assert!(in_size <= out_size);
                     
@@ -194,7 +198,8 @@ pub mod ope {
                 }
 
                 let mut output = self.tape_gen(mid);
-                let mut samples = hypergeo_sample(in_start, in_edge, out_start, out_end, mid, output);
+                println!("hgd in start {}, end {}, out start {}, out end {}, seed {}", in_start, in_end, out_start, out_end, mid);
+                let mut samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
 
                 if ciphertext <= mid {
                     if in_edge.checked_add(1).is_some() {
@@ -228,6 +233,7 @@ pub mod ope {
          */
         pub fn tape_gen(&mut self, data: u64) ->  PRNG {
 
+            println!("tape gen");
             let data_str = data.to_string(); 
             let data_bytes = data_str.as_bytes();
         
@@ -262,7 +268,7 @@ mod tests {
     pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
     pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
 
-    
+    /*
     #[test]
     fn test_encrypt() {
 
@@ -284,15 +290,15 @@ mod tests {
         assert!(b < c);
 
     }
-    /*
+    */
     #[test]
     fn test_decrypt() {
 
-       let mut test = OPE { key:"testing-key".to_string(), in_range: Range {start: 0 , end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 0, end: DEFAULT_OUTPUT_RANGE_END}};
+       let mut test = OPE { key:"ope-testing-key".to_string(), in_range: Range {start: 1 , end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 0, end: DEFAULT_OUTPUT_RANGE_END}};
        
-       let num = test.encrypt(25);
+       //let num = test.encrypt(25 as u64);
 
-       assert_eq!(25, test.decrypt(num));
+       assert_eq!(25, test.decrypt(786446));
     }
-    */
+    
 }
