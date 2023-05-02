@@ -11,20 +11,39 @@ extern crate sha2;
 use crypto::symmetriccipher::SynchronousStreamCipher;
 use crypto::aes::{KeySize, ctr};
 
-pub fn retrieve_key() -> String {
+use crate::ope::ope::ope::OPE;
+use crate::ope::ope::ope::Range;
 
-    return "my-tao-testing-key".to_string();
+pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
+pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
+
+
+pub fn retrieve_key(key_type: &str) -> String {
+
+    match key_type {
+        ope =>  "ope-testing-key".to_string(),
+        aes =>  "my-tao-testing-key".to_string(),
+        _ => "not-ope-aes-key".to_string(),
+        
+    }
 
 }
 pub fn encrypt_ope(data: u64) -> u64 {
 
-    return data;
+
+    let key = retrieve_key("ope");
+    let mut ope: OPE = OPE { key:key, 
+                        in_range: Range { start: 1, end: DEFAULT_INPUT_RANGE_END }, 
+                        out_range: Range { start: 1, end: DEFAULT_OUTPUT_RANGE_END } };
+
+    
+    return ope.encrypt(data);
 }
 
 pub fn encrypt_string(data: String) -> String {
 
     
-    let key = retrieve_key();
+    let key = retrieve_key("aes");
     let mut aes_cipher =  ctr(KeySize::KeySize256, &key.into_bytes(), &[b'\x00';16]); // change IV?
 
     let data_bytes = data.into_bytes();
@@ -37,7 +56,7 @@ pub fn encrypt_string(data: String) -> String {
 
 pub fn encrypt_int(data: i32) -> i32 {
 
-    let key = retrieve_key();
+    let key = retrieve_key("aes");
     let mut aes_cipher =  ctr(KeySize::KeySize256, &key.into_bytes(), &[b'\x00';16]); // change IV?
 
     let data_string = data.to_string();
@@ -68,6 +87,11 @@ pub fn encrypt_idset(data: Vec<i32>) -> Vec<i32> {
 mod tests {
 
     use crate::query::crypto::{encrypt_int, encrypt_idset, encrypt_string};
+    use crate::ope::ope::ope::OPE;
+    use crate::ope::ope::ope::Range;
+
+    pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
+    pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
 
     #[test]
     fn test_encrypt_int() {
@@ -88,4 +112,5 @@ mod tests {
         
         assert_eq!(encrypt, test);
     }
+  
 }
