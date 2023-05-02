@@ -44,7 +44,12 @@ pub fn encrypt_int(data: i32) -> i32 {
 
 pub fn encrypt_idset(data: Vec<i32>) -> Vec<i32> {
 
-    return data;
+    let mut encrypt = data.clone();
+
+    for i in 0..data.len() {
+        encrypt[i] = encrypt_int(data[i]);
+    }
+    return encrypt;
 
 }
 /*
@@ -54,11 +59,17 @@ pub fn encrypt_idset(data: Vec<i32>) -> Vec<i32> {
 #[cfg(test)]
 mod tests {
 
-    use crate::query::crypto::{encrypt_int};
+    use crate::query::crypto::{encrypt_int, encrypt_idset};
 
     #[test]
     fn test_encrypt_int() {
         let res = encrypt_int(8);
         assert_eq!(res, 56);
+    }
+
+    #[test]
+    fn test_encrypt_idset() {
+        let encrypt = encrypt_idset(vec![78, 2, 4, 99]);
+        assert_eq!(vec![55, 50, 52, 57], encrypt);
     }
 }

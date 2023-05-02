@@ -12,6 +12,7 @@ use tokio_postgres::{connect, types::ToSql, Client, NoTls};
 
 use crate::query::{
     parser,
+    crypto::{encrypt_int, encrypt_ope, encrypt_string, encrypt_idset},
     query::{format_in_clause, Query, TaoArgs, TaoOp},
     results::{deserialize_rows, DBRow},
 };
@@ -143,8 +144,9 @@ impl TaoServer {
         let client = self.db_connect().await.unwrap();
 
         let (id, ty, idset) = match query.args {
-            TaoArgs::AssocGetArgs { id, atype, idset } => (id, atype, idset),
-            // TaoArgs::AssocArgsEncryped ...
+            TaoArgs::AssocGetArgs { id, atype, idset } => (encrypt_int(id), encrypt_string(atype), encrypt_idset(idset)),
+            // TaoArgs::AssocArgsEncryped ... 
+            // TaoArgs::AssocGetArgs { id, atype, idset } => (encrypt_int(id), encrypt_string(atype), encrypt_int(idset)),
             _ => panic!("Incorrect args to assoc get"),
         };
 
@@ -163,7 +165,6 @@ impl TaoServer {
         let mut params =
             vec![&id as &(dyn ToSql + Sync), &ty as &(dyn ToSql + Sync)];
         params.extend(idset);
-
         let resp = &client.query(&sql_query, &params).await.unwrap();
 
         let res = deserialize_rows(&query.op, resp);
@@ -205,7 +206,7 @@ impl TaoServer {
             &tend as &(dyn ToSql + Sync),
         ];
         params.extend(idset);
-
+        // here !!
         let resp = &client.query(&sql_query, &params).await.unwrap();
 
         let res = deserialize_rows(&query.op, resp);
@@ -223,7 +224,7 @@ impl TaoServer {
             TaoArgs::AssocCountArgs { id, atype } => (id, atype),
             _ => panic!("Incorrect args to obj get"),
         };
-
+        // here !
         let resp = &client
             .query(sql_query, &[&id, &atype.as_str()])
             .await
@@ -232,7 +233,7 @@ impl TaoServer {
         let res = deserialize_rows(&query.op, resp);
         return Some(res);
     }
-
+    // TODO encrypt here
     async fn assoc_range(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
 
@@ -255,7 +256,7 @@ impl TaoServer {
             } => (id, atype, tstart, tend, lim),
             _ => panic!("Incorrect args to obj get"),
         };
-
+        // here !!
         let resp = &client
             .query(sql_query, &[&id, &atype.as_str(), &tstart, &tend, &lim])
             .await
