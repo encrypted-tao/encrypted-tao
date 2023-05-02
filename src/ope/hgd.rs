@@ -104,7 +104,7 @@
    */
  pub fn hypergeo_sample(in_start: u64, in_end:u64, out_start:u64, out_end:u64, seed: u64, mut coins: PRNG) -> u64 {
 
-         println!("hgd");
+         //println!("hgd");
          let mut in_range = Range {start: in_start, end: in_end};
          let mut out_range = Range {start: out_start, end: out_end};
          let mut in_size = in_range.size();
@@ -119,13 +119,13 @@
 
          if in_size == out_size {
             /* Input and output range sizes are equal */
-            println!("in and out sizes are equal");
+            //println!("in and out sizes are equal");
              return in_range.start + index - 1;
  
          } else if index > 10 {
 
             /* If Index > 10, H2PE (Hypergeometric-2 Points-Exponential Tails */
-             println!("Index > 10");
+            // println!("Index > 10");
              let d1: f64 = 1.7155277699214135;
              let d2: f64 = 0.8989161620588988;
  
@@ -144,7 +144,7 @@
              let d10: f64 = log_gamma(d9+1) + log_gamma(min-d9+1) + log_gamma((min_sample-d9+1)) + log_gamma((max-min_sample+d9+1));
              let d11 = cmp::min((cmp::min(min_sample, min)) + 1 , (d6 + 16.0 * d7).floor() as u64);
  
-             println!("In size {}, d11 {}", in_size, d11);
+            // println!("In size {}, d11 {}", in_size, d11);
              let mut Z = 0;
              loop {
                
@@ -166,7 +166,7 @@
                  //println!("fast accept: {}",X*(4.0-X)-3.0);
                  //println!("accept: {}", 2.0 * X.ln());
                  if (X*(4.0-X)-3.0) as u64 <= T as u64 {
-                    println!("fast accept");
+                    //println!("fast accept");
                      break;
                  }
                  //println!("fast reject: {}", (X*(X - T)) as u64);
@@ -176,13 +176,13 @@
                  }
                 //println!("accept: {}", 2.0 * X.ln());
                  if (2.0 * X.ln()) <= T {
-                    println!("accept");
+                   // println!("accept");
                     break;
                  }
  
              }
 
-             println!("post loop");
+             //println!("post loop");
              sample = Z;
         
               if in_size > (out_size - in_size) {
@@ -195,7 +195,7 @@
  
          } else {
             /* If index <= 10, Inverse Transformation */
-            println!("Index <= 10\n");
+            //println!("Index <= 10\n");
 
              out_size = out_size - in_size;
              let d1 = (in_size + (out_size - in_size) - (index));
@@ -228,12 +228,12 @@
  
          }
          if sample == 0 {
-            println!("hgd return in_range.start {}", in_range.start);
+            //println!("hgd return in_range.start {}", in_range.start);
              return in_range.start;
  
          } else {
             sample = in_range.start + sample as u64 - 1;
-            println!("hgd returns {}", sample);
+            //println!("hgd returns {}", sample);
             assert!(in_range.contains(sample));
             return sample;
          }

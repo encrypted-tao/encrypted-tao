@@ -93,7 +93,7 @@ pub mod ope {
         
         pub fn recursive_encrypt(&mut self, plaintext: u64,  in_start: u64, in_end:u64, out_start:u64, out_end:u64) -> u64 {
 
-                println!("recursive encrypt\n");
+                //println!("recursive encrypt\n");
                 let mut in_range = Range {start: in_start, end: in_end};
                 let mut out_range = Range {start: out_start, end: out_end};
                 let in_size = in_range.size();
@@ -109,15 +109,15 @@ pub mod ope {
                 }
                 let mut mid = out_edge + (out_size / 2) as u64;
 
-                println!("mid {}", mid);
+                //println!("mid {}", mid);
                 // sanity check 
                 assert!(in_size <= out_size);
 
                 if in_range.size() == 1 {
-                    println!("size of input range is 1");
+                    //println!("size of input range is 1");
                     let output = self.tape_gen(plaintext);
                     let ciphertext = uniform_sample(out_range, output);
-                    println!("End of recursive encrypt, cipher text {}", ciphertext);
+                    //println!("End of recursive encrypt, cipher text {}", ciphertext);
                     return ciphertext;
                 }
                 
@@ -125,7 +125,7 @@ pub mod ope {
 
                 let mut samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
 
-                println!("plaintext {} <= samples {}", plaintext, samples);
+                //println!("plaintext {} <= samples {}", plaintext, samples);
                 if plaintext <= samples {
                     if in_edge.checked_add(1).is_some() {
                         in_edge += 1;
@@ -135,7 +135,7 @@ pub mod ope {
                     }
                     return self.recursive_encrypt(plaintext, in_edge, samples, out_edge, mid);
                 }  else {
-                    println!("in_start {}, in_end {}, end_start {}, end_end {}", samples, in_edge, mid, out_edge);
+                    //println!("in_start {}, in_end {}, end_start {}, end_end {}", samples, in_edge, mid, out_edge);
                     if samples.checked_add(1).is_some() {
                         samples += 1;
                     } 
@@ -148,7 +148,7 @@ pub mod ope {
                     if out_edge.checked_add(out_size).is_some() {
                         out_edge += out_size;
                     }
-                    println!("in_start {}, in_end {}, end_start {}, end_end {}", samples, in_edge, mid, out_edge);
+                    //println!("in_start {}, in_end {}, end_start {}, end_end {}", samples, in_edge, mid, out_edge);
                     return self.recursive_encrypt(plaintext, samples, in_edge, mid, out_edge );
                 }
 
@@ -165,7 +165,7 @@ pub mod ope {
 
         pub fn recursive_decrypt(&mut self, ciphertext: u64, in_start: u64, in_end:u64, out_start:u64, out_end:u64) -> u64 {
             
-                println!("recursive decrypt\n");
+                // println!("recursive decrypt\n");
                 let mut in_range = Range {start: in_start, end: in_end};
                 let mut out_range = Range {start: out_start, end: out_end};
                 let in_size = in_range.size();
@@ -182,23 +182,23 @@ pub mod ope {
                 }
                 let mut mid = out_edge + (out_size / 2) as u64;
 
-                println!("mid {}, in size {}", mid, in_range.size());
+                //println!("mid {}, in size {}", mid, in_range.size());
                 // sanity check
                 assert!(in_size <= out_size);
-                println!("Decrypt in range check start {}, end {}, size {}", in_start, in_end, in_range.size());
+                //println!("Decrypt in range check start {}, end {}, size {}", in_start, in_end, in_range.size());
                 if in_range.size() == 1 {
                     let min_in = in_range.start;
                     let mut output = self.tape_gen(ciphertext);
                     let sample_text = uniform_sample(out_range, output);
-                    println!("UNIFORM SAMPLE {}", sample_text);
+                    //println!("UNIFORM SAMPLE {}", sample_text);
                     return min_in;
                     
-                    // else -> failure
+
 
                 }
 
                 let mut output = self.tape_gen(mid);
-                println!("hgd in start {}, end {}, out start {}, out end {}, seed {}", in_start, in_end, out_start, out_end, mid);
+                //println!("hgd in start {}, end {}, out start {}, out end {}, seed {}", in_start, in_end, out_start, out_end, mid);
                 let mut samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
 
                 if ciphertext <= mid {
@@ -208,7 +208,7 @@ pub mod ope {
                     if out_edge.checked_add(1).is_some() {
                         out_edge += 1;
                     }
-                    println!("IF in_start {}, in_end {}, end_start {}, end_end {}", in_edge, samples, out_edge, mid);
+                    //println!("IF in_start {}, in_end {}, end_start {}, end_end {}", in_edge, samples, out_edge, mid);
                     return self.recursive_decrypt(ciphertext, in_edge, samples, out_edge, mid)
                 }  else {
                     if samples.checked_add(1).is_some() {
@@ -223,7 +223,7 @@ pub mod ope {
                     if out_edge.checked_add(out_size).is_some() {
                         out_edge += out_size;
                     }
-                    println!("ELSE in_start {}, in_end {}, end_start {}, end_end {}", samples, in_edge, mid, out_edge);
+                    //println!("ELSE in_start {}, in_end {}, end_start {}, end_end {}", samples, in_edge, mid, out_edge);
                     return self.recursive_decrypt(ciphertext, samples, in_edge, mid, out_edge);
                 }
 
@@ -235,7 +235,6 @@ pub mod ope {
          */
         pub fn tape_gen(&mut self, data: u64) ->  PRNG {
 
-            println!("tape gen");
             let data_str = data.to_string(); 
             let data_bytes = data_str.as_bytes();
         

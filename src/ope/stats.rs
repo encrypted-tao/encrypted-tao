@@ -25,7 +25,6 @@ use crate::ope::utils::{generate_tape};
 */
 pub fn uniform_sample(mut in_range: Range, mut prng: PRNG) -> u64 {
     
-    println!("start of uniform\n");
        
     let mut cur = in_range.copy();
     let mut index = 0;
