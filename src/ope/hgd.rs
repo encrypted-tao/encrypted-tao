@@ -104,7 +104,7 @@
    */
  pub fn hypergeo_sample(in_start: u64, in_end:u64, out_start:u64, out_end:u64, seed: u64, mut coins: PRNG) -> u64 {
 
-         
+         println!("hgd");
          let mut in_range = Range {start: in_start, end: in_end};
          let mut out_range = Range {start: out_start, end: out_end};
          let mut in_size = in_range.size();
@@ -119,6 +119,7 @@
 
          if in_size == out_size {
             /* Input and output range sizes are equal */
+            println!("in and out sizes are equal");
              return in_range.start + index - 1;
  
          } else if index > 10 {
@@ -153,7 +154,7 @@
                 
                  let mut W = d6 + d8 * (Y - 0.5) / X;
                  //println!("min sample {}, min {}", min_sample, in_size);
-                println!("W {}, d11 {}, index {}", W, d11, index);
+                //println!("W {}, d11 {}, index {}", W, d11, index);
                  if W < 0.0 || W >= d11 as f64 {
                      continue;
                  }              
@@ -161,19 +162,19 @@
 
                  let T = d10 - (log_gamma(Z+1) + log_gamma(min-Z+1) + log_gamma((min_sample-Z+1)) + log_gamma(max-min_sample+Z+1));
 
-                 println!("X {}, T {}", X, T);
-                 println!("fast accept: {}",X*(4.0-X)-3.0);
-                 println!("accept: {}", 2.0 * X.ln());
-                 if (X*(4.0-X)-3.0) <= T {
+                 //println!("X {}, T {}", X, T);
+                 //println!("fast accept: {}",X*(4.0-X)-3.0);
+                 //println!("accept: {}", 2.0 * X.ln());
+                 if (X*(4.0-X)-3.0) as u64 <= T as u64 {
                     println!("fast accept");
                      break;
                  }
-                 println!("fast reject: {}", (X*(X - T)) as u64);
+                 //println!("fast reject: {}", (X*(X - T)) as u64);
                  if (X*(X - T)) as u64 >= 1 {
                      //println!("fast reject");
                      continue;
                  }
-                println!("accept: {}", 2.0 * X.ln());
+                //println!("accept: {}", 2.0 * X.ln());
                  if (2.0 * X.ln()) <= T {
                     println!("accept");
                     break;
@@ -232,8 +233,8 @@
  
          } else {
             sample = in_range.start + sample as u64 - 1;
-            assert!(in_range.contains(sample));
             println!("hgd returns {}", sample);
+            assert!(in_range.contains(sample));
             return sample;
          }
  
