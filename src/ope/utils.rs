@@ -13,8 +13,6 @@
  */
 
  extern crate crypto; // https://github.com/RustCrypto/traits/tree/master/crypto
- extern crate rand;
- extern crate rand_distr;
  extern crate hmac;
  extern crate aes;
  extern crate sha2;
