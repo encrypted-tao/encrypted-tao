@@ -99,7 +99,7 @@ pub enum TaoArgs {
         id1: i32,
         atype: String,
         id2: i32,
-        time: i32,
+        time: i64,
         data: String,
     },
     AssocGetArgs {
@@ -111,8 +111,8 @@ pub enum TaoArgs {
         id: i32,
         atype: String,
         idset: Vec<i32>,
-        tstart: i32,
-        tend: i32,
+        tstart: i64,
+        tend: i64,
     },
     AssocCountArgs {
         id: i32,
@@ -121,8 +121,8 @@ pub enum TaoArgs {
     AssocRangeArgs {
         id: i32,
         atype: String,
-        tstart: i32,
-        tend: i32,
+        tstart: i64,
+        tend: i64,
         lim: i64,
     },
     ObjGetArgs {

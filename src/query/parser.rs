@@ -64,7 +64,7 @@ fn parse_tao_args(
             let id1: i32 = a1.parse().unwrap();
             let atype: String = a2.to_string();
             let id2: i32 = a3.parse().unwrap();
-            let time: i32 = a4.parse().unwrap();
+            let time: i64 = a4.parse().unwrap();
             let data: String = a5.to_string();
 
             return TaoArgs::AssocAddArgs {
@@ -94,8 +94,8 @@ fn parse_tao_args(
             let id: i32 = a1.parse().unwrap();
             let atype = a2.to_string();
             let idset = parse_id_set(a3);
-            let tstart: i32 = a4.parse().unwrap();
-            let tend: i32 = a5.parse().unwrap();
+            let tstart: i64 = a4.parse().unwrap();
+            let tend: i64 = a5.parse().unwrap();
 
             return TaoArgs::AssocRangeGetArgs {
                 id: id,
@@ -119,8 +119,8 @@ fn parse_tao_args(
             let (a1, a2, a3, a4, a5) = unwrap_five_args(args);
             let id1: i32 = a1.parse().unwrap();
             let atype = a2.to_string();
-            let t1: i32 = a3.parse().unwrap();
-            let t2: i32 = a4.parse().unwrap();
+            let t1: i64 = a3.parse().unwrap();
+            let t2: i64 = a4.parse().unwrap();
             let lim: i64 = a5.parse().unwrap();
 
             return TaoArgs::AssocRangeArgs {

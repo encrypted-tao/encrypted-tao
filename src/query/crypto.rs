@@ -28,16 +28,18 @@ pub fn retrieve_key(key_type: &str) -> String {
     }
 
 }
-pub fn encrypt_ope(data: u64) -> u64 {
+pub fn encrypt_ope(data: i64) -> i64 {
 
+    // check cache
 
     let key = retrieve_key("ope");
     let mut ope: OPE = OPE { key:key, 
                         in_range: Range { start: 1, end: DEFAULT_INPUT_RANGE_END }, 
                         out_range: Range { start: 1, end: DEFAULT_OUTPUT_RANGE_END } };
 
-    
-    return ope.encrypt(data);
+    // add to cache 
+    let encrypt = ope.encrypt(data.try_into().unwrap());
+    return encrypt.try_into().unwrap();
 }
 
 pub fn encrypt_string(data: String) -> String {

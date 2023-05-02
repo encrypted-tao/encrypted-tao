@@ -124,7 +124,7 @@ impl TaoServer {
                 id2,
                 time,
                 data,
-            } => (id1, atype, id2, time, data),
+            } => (encrypt_int(id1), encrypt_string(atype), encrypt_int(id2), encrypt_ope(time), encrypt_string(data)),
             _ => panic!("Incorrect args to assoc add"),
         };
 
@@ -181,7 +181,7 @@ impl TaoServer {
                 idset,
                 tstart,
                 tend,
-            } => (id, atype, idset, tstart, tend),
+            } => (encrypt_int(id), encrypt_string(atype), encrypt_idset(idset), encrypt_ope(tstart), encrypt_ope(tend)),
             _ => panic!("Incorrect args to assoc get"),
         };
 
@@ -221,7 +221,7 @@ impl TaoServer {
                        AND atype = $2";
 
         let (id, atype) = match query.args {
-            TaoArgs::AssocCountArgs { id, atype } => (id, atype),
+            TaoArgs::AssocCountArgs { id, atype } => (encrypt_int(id), encrypt_string(atype)),
             _ => panic!("Incorrect args to obj get"),
         };
         // here !
@@ -253,7 +253,7 @@ impl TaoServer {
                 tstart,
                 tend,
                 lim,
-            } => (id, atype, tstart, tend, lim),
+            } => (encrypt_int(id), encrypt_string(atype), encrypt_ope(tstart), encrypt_ope(tend), lim),
             _ => panic!("Incorrect args to obj get"),
         };
         // here !!
@@ -274,7 +274,7 @@ impl TaoServer {
                          WHERE id = $1";
 
         let id = match query.args {
-            TaoArgs::ObjGetArgs { id } => id,
+            TaoArgs::ObjGetArgs { id } => encrypt_int(id),
             _ => panic!("Incorrect args to obj get"),
         };
 
@@ -291,7 +291,7 @@ impl TaoServer {
                          VALUES ($1, $2, $3)";
 
         let (id, ty, data) = match query.args {
-            TaoArgs::ObjAddArgs { id, otype, data } => (id, otype, data),
+            TaoArgs::ObjAddArgs { id, otype, data } => (encrypt_int(id), encrypt_string(otype), encrypt_string(data)),
             _ => panic!("Incorrect args to obj add"),
         };
 
@@ -322,3 +322,31 @@ pub async fn query_handler(
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(scope("").service(hello).service(query_handler));
 }
+
+/*
+ * TAO test
+ * run `via cargo test`
+ */
+ #[cfg(test)]
+ mod tests {
+ 
+    use crate::query::{
+        parser,
+        crypto::{encrypt_int, encrypt_ope, encrypt_string, encrypt_idset},
+        query::{format_in_clause, Query, TaoArgs, TaoOp},
+        results::{deserialize_rows, DBRow},
+    };
+     use crate::ope::ope::ope::OPE;
+     use crate::ope::ope::ope::Range;
+ 
+     pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
+     pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
+ 
+     #[test]
+     fn test_assoc_get() {
+
+        let query_input = "ASSOC RANGE 55 AUTHORED 0 100 10;".to_string();
+        let tao_queries = parser::parse(query_input.as_str());
+
+     }
+ }
