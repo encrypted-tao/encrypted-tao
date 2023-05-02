@@ -18,14 +18,7 @@
  extern crate sha2;
 
  use crate::ope::hgd::PRNG;
- use hmac::{Hmac, Mac};
- use std::io::Bytes;
- use sha2::Sha256;
- use aes::Aes256;
- use aes::cipher::{
-    BlockCipher, BlockEncrypt, BlockDecrypt, KeyInit};
- use generic_array::{GenericArray, arr, ArrayLength};
- use crypto::symmetriccipher::{SynchronousStreamCipher, Encryptor};
+ use crypto::symmetriccipher::SynchronousStreamCipher;
  use crypto::aes::{KeySize, ctr};
 
  pub fn aes_init(result: &mut [u8]) ->  Box<dyn SynchronousStreamCipher + 'static> {
@@ -44,7 +37,7 @@
 
    prng.cipher.process(&[b'\x00';16], &mut tape);
 
-   let mut bin_tape = convert_bitstring(tape);
+   let bin_tape = convert_bitstring(tape);
    
    return bin_tape;
  }
@@ -54,7 +47,7 @@
       let mut bin: [Vec<u8>; 16] =  Default::default();
 
       for i in 0..16 {
-         let mut tmp: String =  data[i].to_string();
+         let tmp: String =  data[i].to_string();
          bin[i] = tmp.clone().as_bytes().to_vec();
       }
 
@@ -67,12 +60,12 @@
  }
  pub fn convert_bitstring(mut data: [u8; 16]) -> [u32; 96] {
 
-      let mut bytes = generate_bytes(&mut data);
+      let bytes = generate_bytes(&mut data);
       let mut ret = [0; 96]; 
       let mut index = 0;
 
       for mut byte in bytes {
-         let mut bit = byte_to_bits(&mut byte);
+         let bit = byte_to_bits(&mut byte);
          for i in bit.chars() {
             ret[index] = i.to_digit(2, /* u32 */).unwrap();
             index += 1;

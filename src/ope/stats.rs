@@ -12,8 +12,6 @@
  *
  */
 
-use std::cmp;
-use std::str;
 use crate::ope::ope::ope::Range;
 use crate::ope::hgd::PRNG;
 use crate::ope::utils::{generate_tape};
@@ -28,7 +26,7 @@ pub fn uniform_sample(mut in_range: Range, mut prng: PRNG) -> u64 {
     let mut cur = in_range.copy();
     let mut index = 0;
 
-    let mut coins = generate_tape(&mut prng);
+    let coins = generate_tape(&mut prng);
 
     
     while cur.size() > 1 {

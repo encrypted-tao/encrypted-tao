@@ -16,7 +16,6 @@
  */
 
  use std::cmp;
- use std::str;
  use crate::ope::ope::ope::Range;
  use crate::ope::utils::{generate_tape};
  use crypto::symmetriccipher::SynchronousStreamCipher;
@@ -36,8 +35,8 @@
  
          let mut tmp = 0;
  
-         let mut tape = generate_tape(self);
-         let mut coins = &tape[0..32];
+         let tape = generate_tape(self);
+         let coins = &tape[0..32];
 
          // sanity check
          assert_eq!(coins.len(), 32);
@@ -64,7 +63,7 @@
       6.410256410256410e-03, -2.955065359477124e-02,
       1.796443723688307e-01, -1.39243221690590e+00];
  
-     let mut x = x as f64 * 1.0;
+     let x = x as f64 * 1.0;
      let mut x0 = x;
      let mut n: u64 = 0;
  
@@ -106,9 +105,9 @@
 
          let mut in_range = Range {start: in_start, end: in_end};
          let mut out_range = Range {start: out_start, end: out_end};
-         let mut in_size = in_range.size();
+         let in_size = in_range.size();
          let mut out_size = out_range.size();
-         let mut index: u64 = seed - out_range.start + 1;
+         let index: u64 = seed - out_range.start + 1;
          let mut sample = 0;
        
          // sanity checks
@@ -131,15 +130,15 @@
              let size = in_size + (out_size - in_size);
              let max = cmp::max(in_size, out_size - in_size);
  
-             let min_sample = cmp::min(index, (size - index));
+             let min_sample = cmp::min(index, size - index);
 
-             let d4 = (min as f64 / size as f64);
+             let d4 = min as f64 / size as f64;
              let d5 = 1.0 - d4;
              let d6: f64 = min_sample as f64 * d4 + 0.5;
              let d7: f64 = ((size - min) as f64 * index as f64 * d4 * d5  / (size -  1) as f64 + 0.5).sqrt();
              let d8: f64 = d1 * d7 + d2;
-             let d9 = (((min_sample + 1) * (min + 1) / (size + 2))) as u64;
-             let d10: f64 = log_gamma(d9+1) + log_gamma(min-d9+1) + log_gamma((min_sample-d9+1)) + log_gamma((max-min_sample+d9+1));
+             let d9 = ((min_sample + 1) * (min + 1) / (size + 2)) as u64;
+             let d10: f64 = log_gamma(d9+1) + log_gamma(min-d9+1) + log_gamma(min_sample-d9+1) + log_gamma(max-min_sample+d9+1);
              let d11 = cmp::min((cmp::min(min_sample, min)) + 1 , (d6 + 16.0 * d7).floor() as u64);
  
              let mut z = 0;
@@ -149,14 +148,14 @@
                  let y = coins.draw();
 
                 
-                 let mut w = d6 + d8 * (y - 0.5) / x;
+                 let w = d6 + d8 * (y - 0.5) / x;
                  
                  if w < 0.0 || w >= d11 as f64 {
                      continue;
                  }              
                  z = w.floor() as u64;
 
-                 let t = d10 - (log_gamma(z+1) + log_gamma(min-z+1) + log_gamma((min_sample-z+1)) + log_gamma(max-min_sample+z+1));
+                 let t = d10 - (log_gamma(z+1) + log_gamma(min-z+1) + log_gamma(min_sample-z+1) + log_gamma(max-min_sample+z+1));
 
                  if (x*(4.0-x)-3.0) as u64 <= t as u64 {
                      break;
@@ -186,7 +185,7 @@
             /* If index <= 10, Inverse Transformation */
 
              out_size = out_size - in_size;
-             let d1 = (in_size + (out_size - in_size) - (index));
+             let d1 = in_size + (out_size - in_size) - index;
              let d2 = cmp::min(in_size, out_size - in_size);
  
              let mut y = d2;

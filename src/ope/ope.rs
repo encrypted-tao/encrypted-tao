@@ -14,25 +14,15 @@
 
 extern crate crypto; // https://github.com/RustCrypto/traits/tree/master/crypto
 extern crate hmac;
-extern crate aes;
 
 
 pub mod ope {
 
-    use crate::ope::utils::{convert_bitstring, aes_init};
+    use crate::ope::utils::aes_init;
     use crate::ope::hgd::{hypergeo_sample, PRNG};
     use crate::ope::stats::uniform_sample;
     use hmac::{Hmac, Mac};
     use sha2::Sha256;
-    use aes::{Aes256};
-    use aes::cipher::{
-        BlockCipher, BlockEncrypt, BlockDecrypt};
-    use std::io::{Read, Write, Cursor};
-    use generic_array::{GenericArray, arr, ArrayLength};
-    use std::cmp;
-    use generic_array::typenum::{UInt, Integer};
-    use crypto::symmetriccipher::{SynchronousStreamCipher, Encryptor};
-    use crypto::buffer::RefReadBuffer;
 
     pub struct Range {
         pub start: u64,
@@ -111,7 +101,7 @@ pub mod ope {
                     return ciphertext;
                 }
                 
-                let mut output = self.tape_gen(mid);
+                let output = self.tape_gen(mid);
 
                 let mut samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
 
@@ -177,7 +167,7 @@ pub mod ope {
                     return in_range.start;
                 }
 
-                let mut output = self.tape_gen(mid);
+                let output = self.tape_gen(mid);
             
                 let mut samples = hypergeo_sample(in_start, in_end, out_start, out_end, mid, output);
 
@@ -224,7 +214,7 @@ pub mod ope {
 
             let hmac_res = hmac_obj.finalize();
 
-            let mut cipher = aes_init(&mut hmac_res.clone().into_bytes());
+            let cipher = aes_init(&mut hmac_res.clone().into_bytes());
             
             let prng = PRNG { cipher:cipher, tape: [0; 96] };
 
@@ -239,7 +229,6 @@ pub mod ope {
  */
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     use crate::ope::ope::ope::OPE;
     use crate::ope::ope::ope::Range;
