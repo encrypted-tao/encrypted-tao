@@ -176,13 +176,7 @@ pub mod ope {
                 assert!(in_size <= out_size);
         
                 if in_range.size() == 1 {
-                    let min_in = in_range.start;
-                    let mut output = self.tape_gen(ciphertext);
-                    let sample_text = uniform_sample(out_range, output);
-                    return min_in;
-                    
-
-
+                    return in_range.start;
                 }
 
                 let mut output = self.tape_gen(mid);
