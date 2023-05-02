@@ -1,6 +1,6 @@
 /*
  * File: stats.rs
- *      Statistics helper functions for Rust implementation of 
+ *       Uniform sample function for Rust implementation of 
  *       Order Preserving Encryption OPE
  *      Based off of a python implementation 
  *      (https://github.com/tonyo/pyope/blob/master/pyope/ope.py)
@@ -24,8 +24,7 @@ use crate::ope::utils::{generate_tape};
  *      as a source of 'randomness'
 */
 pub fn uniform_sample(mut in_range: Range, mut prng: PRNG) -> u64 {
-    
-       
+        
     let mut cur = in_range.copy();
     let mut index = 0;
 

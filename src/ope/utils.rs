@@ -11,6 +11,7 @@
  *          https://arxiv.org/pdf/2009.05679.pdf
  *
  */
+
  extern crate crypto; // https://github.com/RustCrypto/traits/tree/master/crypto
  extern crate rand;
  extern crate rand_distr;
@@ -31,10 +32,10 @@
 
  pub fn aes_init(result: &mut [u8]) ->  Box<dyn SynchronousStreamCipher + 'static> {
 
-    // sanity check 
+   // sanity check 
    assert_eq!(result.len(), 32);
+
    let aes_cipher =  ctr(KeySize::KeySize256, result, &[b'\x00';16]);
-   //Aes256::new(&mut GenericArray::from_slice(key));
 
     return aes_cipher;
  }
@@ -79,6 +80,5 @@
             index += 1;
           }
       }
-      //println!("convert bit string {ret:?}");
       return ret;
  }
