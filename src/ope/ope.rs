@@ -275,9 +275,15 @@ mod tests {
     fn test_encrypt() {
 
         let mut test = OPE { key:"ope-testing-key".to_string(), in_range: Range {start: 1, end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 1, end: DEFAULT_OUTPUT_RANGE_END}};
-        let a = test.encrypt(24 as u64);
-        println!("A {}", a);
-        assert_eq!(a, 786433);
+        let a = test.encrypt(10 as u64);
+        let tests: [u64; 3] = [10, 100, 1000];
+        let res: [u64; 3] = [131086, 4747723, 60293123];
+
+        for i in 0..3 {
+            let encrypt = test.encrypt(tests[i]);
+            assert_eq!(res[i], encrypt);
+        }
+       
     }
     
     #[test]
@@ -299,9 +305,13 @@ mod tests {
 
        let mut test = OPE { key:"ope-testing-key".to_string(), in_range: Range {start: 0 , end: DEFAULT_INPUT_RANGE_END}, out_range: Range {start: 0, end: DEFAULT_OUTPUT_RANGE_END}};
        
-       let num = test.encrypt(250 as u64);
+       //let num = test.encrypt(250 as u64);
+        let tests: [u64; 4] = [25, 50, 75, 750];
+        for i in 0..4 {
+            let encrypt = test.encrypt(tests[i]);
+            assert_eq!(tests[i], test.decrypt(encrypt));
+        }
 
-       assert_eq!(250, test.decrypt(num));
     }
     
 }
