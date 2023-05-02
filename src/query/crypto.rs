@@ -21,8 +21,8 @@ pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
 pub fn retrieve_key(key_type: &str) -> String {
 
     match key_type {
-        ope =>  "ope-testing-key".to_string(),
-        aes =>  "my-tao-testing-key".to_string(),
+        "ope" =>  "ope-testing-key".to_string(),
+        "aes" =>  "my-tao-testing-key".to_string(),
         _ => "not-ope-aes-key".to_string(),
         
     }
