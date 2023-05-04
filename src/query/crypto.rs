@@ -39,6 +39,7 @@ pub fn encrypt_ope(data: i64) -> i64 {
 
     // add to cache 
     let encrypt = ope.encrypt(data.try_into().unwrap());
+    println!("OPE {}", encrypt);
     return encrypt.try_into().unwrap();
 }
 
@@ -53,10 +54,11 @@ pub fn encrypt_string(data: String) -> String {
     aes_cipher.process(&data_bytes, &mut data_bytes.clone());
 
     let data_string: String = data_bytes.iter().map(ToString::to_string).collect();
+    println!("encrypted data string {}", data_string);
     return data_string;
 }
 
-pub fn encrypt_int(data: i32) -> i32 {
+pub fn encrypt_int(data: i64) -> i64 {
 
     let key = retrieve_key("aes");
     let mut aes_cipher =  ctr(KeySize::KeySize256, &key.into_bytes(), &[b'\x00';16]); // change IV?
@@ -66,12 +68,13 @@ pub fn encrypt_int(data: i32) -> i32 {
 
     aes_cipher.process(&data_bytes, &mut data_bytes.clone());
 
+    println!("Encrypted data int {}", data_bytes[0]);
     return data_bytes[0].into();
 
 
 }
 
-pub fn encrypt_idset(data: Vec<i32>) -> Vec<i32> {
+pub fn encrypt_idset(data: Vec<i64>) -> Vec<i64> {
 
     let mut encrypt = data.clone();
 

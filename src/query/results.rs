@@ -6,14 +6,14 @@ use crate::query::query::TaoOp;
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DBRow {
     AssocRow {
-        id1: i32,
+        id1: i64,
         atype: String,
-        id2: i32,
-        t: i32,
+        id2: i64,
+        t: i64,
         data: String,
     },
     ObjRow {
-        id: i32,
+        id: i64,
         otype: String,
         data: String,
     },
