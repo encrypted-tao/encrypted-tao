@@ -201,7 +201,7 @@ impl TaoServer {
             &tend as &(dyn ToSql + Sync),
         ];
         params.extend(idset);
-
+        // here !!
         let resp = &client.query(&sql_query, &params).await.unwrap();
 
         let res = deserialize_rows(&query.op, resp);
@@ -334,16 +334,13 @@ pub fn config(cfg: &mut ServiceConfig) {
     };
      use crate::ope::ope::ope::OPE;
      use crate::ope::ope::ope::Range;
-   
-     pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
-     pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
  
      #[test]
      fn test_assoc_get() {
 
         let query_input = "ASSOC RANGE 55 AUTHORED 0 100 10;".to_string();
         let tao_queries = parser::parse(query_input.as_str());
-        
-       
      }
  }
+
+

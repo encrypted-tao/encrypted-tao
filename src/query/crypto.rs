@@ -43,8 +43,8 @@ impl TaoCrypto {
         let ope = OPE { key: "ope-testing-key".to_string(), 
                         in_range: Range { start: 1, end: DEFAULT_INPUT_RANGE_END }, 
                         out_range: Range { start: 1, end: DEFAULT_OUTPUT_RANGE_END } };
-
-        let aes = ctr(KeySize::KeySize256, &"my-tao-testing-key".to_string().into_bytes(), &[b'\x00';16]);
+        let ak = "my-tao-testing-key".to_string();
+        let aes = ctr(KeySize::KeySize256, &ak.into_bytes(), &[b'\x00';16]);
         TaoCrypto { ope, aes }
     }
 
@@ -109,7 +109,7 @@ impl TaoCrypto {
         return encrypt.try_into().unwrap();
     }
 
-    pub fn encrypt_int(&mut self, data: i32) -> i32 {
+    pub fn encrypt_int(&mut self, data: i64) -> i64 {
         let data_string = data.to_string();
         let data_bytes = data_string.into_bytes();
         let mut aes = ctr(KeySize::KeySize256, &"my-tao-testing-key".to_string().into_bytes(), &[b'\x00';16]);
@@ -120,13 +120,14 @@ impl TaoCrypto {
 
     pub fn encrypt_string(&mut self, data: String) -> String {
         let data_bytes = data.into_bytes();
-        self.aes.process(&data_bytes, &mut data_bytes.clone());
+        let mut aes = ctr(KeySize::KeySize256, &"my-tao-testing-key".to_string().into_bytes(), &[b'\x00';16]);
+        aes.process(&data_bytes, &mut data_bytes.clone());
         let data_string: String = data_bytes.iter().map(ToString::to_string).collect();
 
         return data_string;
     }
     
-    pub fn encrypt_idset(&mut self, data: Vec<i32>) -> Vec<i32> {
+    pub fn encrypt_idset(&mut self, data: Vec<i64>) -> Vec<i64> {
         let mut encrypt = data.clone();
 
         for i in 0..data.len() {
@@ -145,9 +146,6 @@ mod tests {
     use crate::query::crypto::TaoCrypto;
     use crate::ope::ope::ope::OPE;
     use crate::ope::ope::ope::Range;
-
-    pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
-    pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
 
     #[test]
     fn test_encrypt_int() {
