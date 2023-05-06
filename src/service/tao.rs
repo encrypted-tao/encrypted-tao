@@ -1,5 +1,3 @@
-use std::sync::{Arc, Mutex};
-
 use actix_web::{
     get, post,
     web::{scope, Data, Json, ServiceConfig},
@@ -12,7 +10,6 @@ use tokio_postgres::{connect, types::ToSql, Client, NoTls};
 
 use crate::query::{
     parser,
-    crypto::{encrypt_int, encrypt_ope, encrypt_string, encrypt_idset},
     query::{format_in_clause, Query, TaoArgs, TaoOp},
     results::{deserialize_rows, DBRow},
 };
@@ -54,15 +51,14 @@ impl DBConfig {
 }
 
 pub struct TaoServer {
-    pub cache: Arc<Mutex<Vec<i32>>>,
     pub db_config: DBConfig,
+    pub encrypted: bool,
 }
 
 impl TaoServer {
-    pub fn new(env_path: String) -> Self {
-        let cache = Arc::new(Mutex::new(vec![]));
+    pub fn new(env_path: String, encrypted: bool) -> Self {
         let db_config = DBConfig::new(env_path);
-        TaoServer { cache, db_config }
+        TaoServer { db_config, encrypted }
     }
 
     async fn db_connect(&self) -> Option<Client> {
@@ -124,9 +120,10 @@ impl TaoServer {
                 id2,
                 time,
                 data,
-            } => (encrypt_int(id1), encrypt_string(atype), encrypt_int(id2), encrypt_ope(time), encrypt_string(data)),
+            } => (id1, atype, id2, time, data),
             _ => panic!("Incorrect args to assoc add"),
         };
+
 
         let resp = &client
             .query(
@@ -144,9 +141,7 @@ impl TaoServer {
         let client = self.db_connect().await.unwrap();
 
         let (id, ty, idset) = match query.args {
-            TaoArgs::AssocGetArgs { id, atype, idset } => (encrypt_int(id), encrypt_string(atype), encrypt_idset(idset)),
-            // TaoArgs::AssocArgsEncryped ... 
-            // TaoArgs::AssocGetArgs { id, atype, idset } => (encrypt_int(id), encrypt_string(atype), encrypt_int(idset)),
+            TaoArgs::AssocGetArgs { id, atype, idset } => (id, atype, idset),
             _ => panic!("Incorrect args to assoc get"),
         };
 
@@ -181,7 +176,7 @@ impl TaoServer {
                 idset,
                 tstart,
                 tend,
-            } => (encrypt_int(id), encrypt_string(atype), encrypt_idset(idset), encrypt_ope(tstart), encrypt_ope(tend)),
+            } => (id, atype, idset, tstart, tend),
             _ => panic!("Incorrect args to assoc get"),
         };
 
@@ -221,7 +216,7 @@ impl TaoServer {
                        AND atype = $2";
 
         let (id, atype) = match query.args {
-            TaoArgs::AssocCountArgs { id, atype } => (encrypt_int(id), encrypt_string(atype)),
+            TaoArgs::AssocCountArgs { id, atype } => (id, atype),
             _ => panic!("Incorrect args to obj get"),
         };
         // here !
@@ -253,7 +248,7 @@ impl TaoServer {
                 tstart,
                 tend,
                 lim,
-            } => (encrypt_int(id), encrypt_string(atype), encrypt_ope(tstart), encrypt_ope(tend), lim),
+            } => (id, atype, tstart, tend, lim),
             _ => panic!("Incorrect args to obj get"),
         };
         // here !!
@@ -274,7 +269,7 @@ impl TaoServer {
                          WHERE id = $1";
 
         let id = match query.args {
-            TaoArgs::ObjGetArgs { id } => encrypt_int(id),
+            TaoArgs::ObjGetArgs { id } => id,
             _ => panic!("Incorrect args to obj get"),
         };
 
@@ -291,9 +286,11 @@ impl TaoServer {
                          VALUES ($1, $2, $3)";
 
         let (id, ty, data) = match query.args {
-            TaoArgs::ObjAddArgs { id, otype, data } => (encrypt_int(id), encrypt_string(otype), encrypt_string(data)),
+            TaoArgs::ObjAddArgs { id, otype, data } => (id, otype, data),
             _ => panic!("Incorrect args to obj add"),
         };
+
+        
 
         let resp = &client
             .query(sql_query, &[&id, &ty.as_str(), &data.as_str()])
@@ -332,7 +329,6 @@ pub fn config(cfg: &mut ServiceConfig) {
  
     use crate::query::{
         parser,
-        crypto::{encrypt_int, encrypt_ope, encrypt_string, encrypt_idset},
         query::{format_in_clause, Query, TaoArgs, TaoOp},
         results::{deserialize_rows, DBRow},
     };
