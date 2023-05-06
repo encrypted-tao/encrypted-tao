@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use tokio_postgres::{connect, types::ToSql, Client, NoTls};
 
 use crate::query::{
+    crypto::TaoCrypto,
     parser,
     query::{format_in_clause, Query, TaoArgs, TaoOp},
     results::{deserialize_rows, DBRow},
@@ -33,7 +34,7 @@ pub struct DBConfig {
 }
 
 impl DBConfig {
-    pub fn new(env_path: String) -> Self {
+    pub fn new(env_path: &String) -> Self {
         dotenv::from_path(env_path).ok();
         let host = dotenv::var("DATABASE_HOST").unwrap();
         let user = dotenv::var("DATABASE_USERNAME").unwrap();
@@ -52,13 +53,19 @@ impl DBConfig {
 
 pub struct TaoServer {
     pub db_config: DBConfig,
+    pub tao_crypto: TaoCrypto,
     pub encrypted: bool,
 }
 
 impl TaoServer {
     pub fn new(env_path: String, encrypted: bool) -> Self {
-        let db_config = DBConfig::new(env_path);
-        TaoServer { db_config, encrypted }
+        let db_config = DBConfig::new(&env_path);
+        let tao_crypto = TaoCrypto::new(&env_path);
+        TaoServer {
+            db_config,
+            tao_crypto,
+            encrypted,
+        }
     }
 
     async fn db_connect(&self) -> Option<Client> {
@@ -96,7 +103,14 @@ impl TaoServer {
 
     pub async fn pipeline(&self, query_input: String) -> HttpResponse {
         println!("Received Query: {:#?}", query_input);
-        let tao_queries = parser::parse(query_input.as_str());
+        let parsed_queries = parser::parse(query_input.as_str());
+        let tao_queries = match self.encrypted {
+            true => parsed_queries
+                .iter()
+                .map(|q| self.tao_crypto.encrypt_query(q.clone()))
+                .collect::<Vec<Query>>(),
+            false => parsed_queries,
+        };
         let results = join_all(
             tao_queries
                 .iter()
@@ -123,7 +137,6 @@ impl TaoServer {
             } => (id1, atype, id2, time, data),
             _ => panic!("Incorrect args to assoc add"),
         };
-
 
         let resp = &client
             .query(
@@ -290,8 +303,6 @@ impl TaoServer {
             _ => panic!("Incorrect args to obj add"),
         };
 
-        
-
         let resp = &client
             .query(sql_query, &[&id, &ty.as_str(), &data.as_str()])
             .await
@@ -324,23 +335,20 @@ pub fn config(cfg: &mut ServiceConfig) {
  * TAO test
  * run `via cargo test`
  */
- #[cfg(test)]
- mod tests {
- 
+#[cfg(test)]
+mod tests {
+
+    use crate::ope::ope::ope::Range;
+    use crate::ope::ope::ope::OPE;
     use crate::query::{
         parser,
         query::{format_in_clause, Query, TaoArgs, TaoOp},
         results::{deserialize_rows, DBRow},
     };
-     use crate::ope::ope::ope::OPE;
-     use crate::ope::ope::ope::Range;
- 
-     #[test]
-     fn test_assoc_get() {
 
+    #[test]
+    fn test_assoc_get() {
         let query_input = "ASSOC RANGE 55 AUTHORED 0 100 10;".to_string();
         let tao_queries = parser::parse(query_input.as_str());
-     }
- }
-
-
+    }
+}
