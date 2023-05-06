@@ -87,7 +87,7 @@
      let mut gl = gl0 / x0 + 0.5 * xp.ln() + x0 - 0.5 * x0.ln() - x0;
 
      if x <= 7.0 {
-         for i in 1..(n+1) {
+         for _i in 1..(n+1) {
              gl -= (x0 - 1.0).ln();
              x0 -= 1.0;
          }
