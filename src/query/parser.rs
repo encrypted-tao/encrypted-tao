@@ -61,9 +61,9 @@ fn parse_tao_args(
     match op {
         TaoOp::AssocAdd => {
             let (a1, a2, a3, a4, a5) = unwrap_five_args(args);
-            let id1: i32 = a1.parse().unwrap();
+            let id1: i64 = a1.parse().unwrap();
             let atype: String = a2.to_string();
-            let id2: i32 = a3.parse().unwrap();
+            let id2: i64 = a3.parse().unwrap();
             let time: i64 = a4.parse().unwrap();
             let data: String = a5.to_string();
 
@@ -79,7 +79,7 @@ fn parse_tao_args(
         TaoOp::AssocChangeType => panic!("Operation not supported"),
         TaoOp::AssocGet => {
             let (a1, a2, a3) = unwrap_three_args(args);
-            let id: i32 = a1.parse().unwrap();
+            let id: i64 = a1.parse().unwrap();
             let atype = a2.to_string();
             let idset = parse_id_set(a3);
 
@@ -91,7 +91,7 @@ fn parse_tao_args(
         }
         TaoOp::AssocRangeGet => {
             let (a1, a2, a3, a4, a5) = unwrap_five_args(args);
-            let id: i32 = a1.parse().unwrap();
+            let id: i64 = a1.parse().unwrap();
             let atype = a2.to_string();
             let idset = parse_id_set(a3);
             let tstart: i64 = a4.parse().unwrap();
@@ -117,7 +117,7 @@ fn parse_tao_args(
         }
         TaoOp::AssocRange => {
             let (a1, a2, a3, a4, a5) = unwrap_five_args(args);
-            let id1: i32 = a1.parse().unwrap();
+            let id1: i64 = a1.parse().unwrap();
             let atype = a2.to_string();
             let t1: i64 = a3.parse().unwrap();
             let t2: i64 = a4.parse().unwrap();
@@ -133,7 +133,7 @@ fn parse_tao_args(
         }
         TaoOp::ObjAdd => {
             let (a1, a2, a3) = unwrap_three_args(args);
-            let id: i32 = a1.parse().unwrap();
+            let id: i64 = a1.parse().unwrap();
             let otype = a2.to_string();
             let data = a3.to_string();
 
@@ -144,7 +144,7 @@ fn parse_tao_args(
             };
         }
         TaoOp::ObjGet => {
-            let id: i32 = args.next().unwrap().as_str().parse().unwrap();
+            let id: i64 = args.next().unwrap().as_str().parse().unwrap();
 
             return TaoArgs::ObjGetArgs { id: id };
         }
@@ -153,7 +153,7 @@ fn parse_tao_args(
     };
 }
 
-fn parse_id_set(lst: &str) -> Vec<i32> {
+fn parse_id_set(lst: &str) -> Vec<i64> {
     let mut ids = TaoParser::parse(Rule::NumList, lst)
         .unwrap_or_else(|e| panic!("{}", e));
     let ids = ids.next().unwrap();
@@ -162,7 +162,7 @@ fn parse_id_set(lst: &str) -> Vec<i32> {
         _ => panic!("Set of IDs should only contain numbers"),
     });
     let idset = ids.map(|n| n.as_str().parse().unwrap());
-    let idset = idset.collect::<Vec<i32>>();
+    let idset = idset.collect::<Vec<i64>>();
 
     return idset;
 }

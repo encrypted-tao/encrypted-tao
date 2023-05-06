@@ -7,7 +7,6 @@ extern crate hmac;
 extern crate aes;
 extern crate sha2;
 
-//use crate::ope::ope::hgd::PRNG;
 use crypto::symmetriccipher::SynchronousStreamCipher;
 use crypto::aes::{KeySize, ctr};
 
@@ -126,7 +125,7 @@ impl TaoCrypto {
 
         return data_string;
     }
-
+    
     pub fn encrypt_idset(&mut self, data: Vec<i32>) -> Vec<i32> {
         let mut encrypt = data.clone();
 
