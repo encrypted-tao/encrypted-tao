@@ -96,40 +96,40 @@ impl fmt::Display for AssocType {
 #[derive(Debug, Clone)]
 pub enum TaoArgs {
     AssocAddArgs {
-        id1: i32,
+        id1: i64,
         atype: String,
-        id2: i32,
-        time: i32,
+        id2: i64,
+        time: i64,
         data: String,
     },
     AssocGetArgs {
-        id: i32,
+        id: i64,
         atype: String,
-        idset: Vec<i32>,
+        idset: Vec<i64>,
     },
     AssocRangeGetArgs {
-        id: i32,
+        id: i64,
         atype: String,
-        idset: Vec<i32>,
-        tstart: i32,
-        tend: i32,
+        idset: Vec<i64>,
+        tstart: i64,
+        tend: i64,
     },
     AssocCountArgs {
-        id: i32,
+        id: i64,
         atype: String,
     },
     AssocRangeArgs {
-        id: i32,
+        id: i64,
         atype: String,
-        tstart: i32,
-        tend: i32,
+        tstart: i64,
+        tend: i64,
         lim: i64,
     },
     ObjGetArgs {
-        id: i32,
+        id: i64,
     },
     ObjAddArgs {
-        id: i32,
+        id: i64,
         otype: String,
         data: String,
     },
@@ -149,7 +149,7 @@ pub struct SqlQuery {
 }
 
 // some crusty helper functions that probably needs a better home
-pub fn format_in_clause(lst: &Vec<i32>, offset: i32) -> String {
+pub fn format_in_clause(lst: &Vec<i64>, offset: i32) -> String {
     let sz = lst.len() as i32;
     let indices = (1..(sz + 1))
         .map(|i| {
