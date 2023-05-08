@@ -186,7 +186,7 @@ impl TaoCrypto {
         let ak = "my-tao-testing-key".to_string();
         let mut aes =
             ctr(KeySize::KeySize256, &ak.into_bytes(), &[b'\x00'; 16]);
-        aes.process(&data_bytes, &mut data_bytes.clone());
+        aes.decrypt(&data_bytes, &mut data_bytes.clone());
 
         return data_bytes[0].into();
     }
@@ -212,7 +212,7 @@ impl TaoCrypto {
         let mut aes =
             ctr(KeySize::KeySize256, &ak.into_bytes(), &[b'\x00'; 16]);
         let data_bytes = data.into_bytes();
-        aes.process(&data_bytes, &mut data_bytes.clone());
+        aes.decrypt(&data_bytes, &mut data_bytes.clone());
         let data_string: String =
             data_bytes.iter().map(ToString::to_string).collect();
 
@@ -253,4 +253,19 @@ mod tests {
 
         assert_eq!(encrypt, test);
     }
-}
+    #[test]
+    fn test_decrypt_int() {
+        let mut taocrypt = TaoCrypto::new(&"./.env".to_string());
+        let res = taocrypt.encrypt_int(8);
+        assert_eq!(tao_crypt.decrypt_int(res), 8);
+
+    }
+    #[test]
+    fn test_decrypt_string() 
+    {
+        let mut taocrypt = TaoCrypto::new(&"./.env".to_string());
+        let encrypt = taocrypt.encrypt_string("testing".to_string());
+
+        assert_eq!(taocrypt.decrypt_string(encrypt), "testing".to_string());
+
+    }
