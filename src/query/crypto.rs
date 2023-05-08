@@ -14,6 +14,7 @@ use crate::ope::ope::ope::OPE;
 use crate::ope::ope::ope::Range;
 
 use crate::query::query::{TaoArgs};
+use crate::results::{deserialize_rows, DBRow};
 
 pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 -1;
 pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
@@ -103,6 +104,7 @@ impl TaoCrypto {
         }
     }
 
+    
     pub fn encrypt_ope(&mut self, data: i64) -> i64 {
         let encrypt = self.ope.encrypt(data.try_into().unwrap());
 
@@ -135,6 +137,36 @@ impl TaoCrypto {
         }
         return encrypt;
     }
+    pub fn decrypt_result(&mut self, row:  DBRow) ->  DBRow {
+        match row {
+            DBRow::AssocRow {id1, atype, id2, t, data} => {
+                DBRow::AssocRow {
+                    id1: self.decrypt_int(id1),
+                    atype: self.decrypt_string(atype),
+                    id2: self.decrypt_int(id2),
+                    t: self.decrypt_ope(t),
+                    data: self.decrypt_string(data),
+                }
+            },
+            DBRow::ObjRow {id, otype, data} => {
+                DBRow::ObjRow {
+                    id: self.decrypt_int(id),
+                    otype: self.decrypt_string(otype),
+                    data: self.decrypt_string(data),
+                }
+            },
+        }
+    }
+    pub fn decrypt_int(&mut self, data: i64) -> i64 {
+
+    }
+    pub fn decrypt_ope(&mut self, data: i64) -> i64 {
+
+    }
+    pub fn decrypt_string(&mut self, data: String) -> String {
+        
+    }
+    
 }
 
 /*
