@@ -1,18 +1,23 @@
 /*
  * File: crypto.rs
- *      Query encryption/decryption
+ *      Query encryption/ Result decryption
+ *
+ * Rust Crypto Crate Source: 
+ *      https://github.com/DaGenix/rust-crypto/blob/master/examples/symmetriccipher.rs
+ *      
  */
 extern crate aes;
-extern crate crypto; // https://github.com/RustCrypto/traits/tree/master/crypto
+extern crate crypto; 
 extern crate hmac;
 extern crate sha2;
 
 use crypto::aes::{ctr, KeySize};
-use crypto::symmetriccipher::SynchronousStreamCipher;
+use crypto::symmetriccipher::{SynchronousStreamCipher, Decryptor};
 
 use crate::ope::ope::ope::Range;
 use crate::ope::ope::ope::OPE;
-
+use crate::query::results::DBRow;
+use crypto::buffer::{ RefReadBuffer, RefWriteBuffer, ReadBuffer, WriteBuffer, BufferResult }; 
 use crate::query::query::{Query, TaoArgs, TaoOp};
 
 pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 - 1;
@@ -177,16 +182,25 @@ impl TaoCrypto {
                     data: self.decrypt_string(data),
                 }
             },
+            DBRow::Count(_) | DBRow::NoRes(_) => todo!()
         }
     }
     pub fn decrypt_int(&mut self, data: i64) -> i64 {
         let data_string = data.to_string();
-        let data_bytes = data_string.into_bytes();
+       
+        let bytes = data_string.into_bytes();
+        let mut data_buf = RefReadBuffer::new(&bytes);
+        let mut buf = [0; 64];
+        let mut out_buf = RefWriteBuffer::new(&mut buf);
 
         let ak = "my-tao-testing-key".to_string();
         let mut aes =
             ctr(KeySize::KeySize256, &ak.into_bytes(), &[b'\x00'; 16]);
-        aes.decrypt(&data_bytes, &mut data_bytes.clone());
+        aes.decrypt(&mut data_buf, &mut out_buf, false);
+    
+        let mut data_buf = out_buf.take_read_buffer();
+
+        let mut data_bytes = data_buf.take_remaining();
 
         return data_bytes[0].into();
     }
@@ -209,10 +223,20 @@ impl TaoCrypto {
     }
     pub fn decrypt_string(&mut self, data: String) -> String {
         let ak = "my-tao-testing-key".to_string();
+
         let mut aes =
             ctr(KeySize::KeySize256, &ak.into_bytes(), &[b'\x00'; 16]);
-        let data_bytes = data.into_bytes();
-        aes.decrypt(&data_bytes, &mut data_bytes.clone());
+
+        let mut bytes = data.into_bytes();
+        let mut data_buf = RefReadBuffer::new(&bytes);
+        let mut buf = [0; 64];
+        let mut out_buf = RefWriteBuffer::new(&mut buf);
+
+        aes.decrypt(&mut data_buf, &mut out_buf, false);
+
+        let mut data_buf = out_buf.take_read_buffer();
+
+        let mut data_bytes = data_buf.take_remaining();
         let data_string: String =
             data_bytes.iter().map(ToString::to_string).collect();
 
@@ -257,7 +281,7 @@ mod tests {
     fn test_decrypt_int() {
         let mut taocrypt = TaoCrypto::new(&"./.env".to_string());
         let res = taocrypt.encrypt_int(8);
-        assert_eq!(tao_crypt.decrypt_int(res), 8);
+        assert_eq!(taocrypt.decrypt_int(res), 8);
 
     }
     #[test]
@@ -269,3 +293,4 @@ mod tests {
         assert_eq!(taocrypt.decrypt_string(encrypt), "testing".to_string());
 
     }
+}
