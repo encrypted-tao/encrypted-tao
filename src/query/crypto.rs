@@ -180,13 +180,43 @@ impl TaoCrypto {
         }
     }
     pub fn decrypt_int(&mut self, data: i64) -> i64 {
+        let data_string = data.to_string();
+        let data_bytes = data_string.into_bytes();
 
+        let ak = "my-tao-testing-key".to_string();
+        let mut aes =
+            ctr(KeySize::KeySize256, &ak.into_bytes(), &[b'\x00'; 16]);
+        aes.process(&data_bytes, &mut data_bytes.clone());
+
+        return data_bytes[0].into();
     }
     pub fn decrypt_ope(&mut self, data: i64) -> i64 {
+        let mut ope = OPE {
+            key: "ope-testing-key".to_string(),
+            in_range: Range {
+                start: 1,
+                end: DEFAULT_INPUT_RANGE_END,
+            },
+            out_range: Range {
+                start: 1,
+                end: DEFAULT_OUTPUT_RANGE_END,
+            },
+        };
+        let decrypt = ope.decrypt(data.try_into().unwrap());
+
+        return decrypt.try_into().unwrap();
 
     }
     pub fn decrypt_string(&mut self, data: String) -> String {
-        
+        let ak = "my-tao-testing-key".to_string();
+        let mut aes =
+            ctr(KeySize::KeySize256, &ak.into_bytes(), &[b'\x00'; 16]);
+        let data_bytes = data.into_bytes();
+        aes.process(&data_bytes, &mut data_bytes.clone());
+        let data_string: String =
+            data_bytes.iter().map(ToString::to_string).collect();
+
+        return data_string;
     }
     
 }
