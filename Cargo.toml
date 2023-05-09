@@ -24,6 +24,7 @@ tokio = { version = "1.27.0", features = [ "full" ] }
 tokio-postgres = "0.7.8"
 rust-crypto = "0.2.36"
 comp = "0.2.1"
+quick_cache = "0.3.0"
 
 [[bin]]
 name="tao-server"

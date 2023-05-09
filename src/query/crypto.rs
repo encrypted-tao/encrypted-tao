@@ -6,9 +6,11 @@ extern crate aes;
 extern crate crypto; // https://github.com/RustCrypto/traits/tree/master/crypto
 extern crate hmac;
 extern crate sha2;
+extern crate quick_cache;
 
 use crypto::aes::{ctr, KeySize};
 use crypto::symmetriccipher::SynchronousStreamCipher;
+use quick_cache::sync::{Cache};
 
 use crate::ope::ope::ope::Range;
 use crate::ope::ope::ope::OPE;
@@ -34,14 +36,26 @@ impl CryptKeys {
 
 pub struct TaoCrypto {
     keys: CryptKeys,
-    //    ope: OPE,
-    //   aes: Box<dyn SynchronousStreamCipher + 'static>
+    id_enc_cache: Cache<i64, i64>,
+    id_dec_cache: Cache<i64, i64>,
+    ope_enc_cache: Cache<i64, i64>,
+    ope_dec_cache: Cache<i64, i64>,
 }
 
 impl TaoCrypto {
-    pub fn new(env_path: &String) -> Self {
+    pub fn new(env_path: &String, cache_size: usize) -> Self {
         let keys = CryptKeys::new(env_path);
-        TaoCrypto { keys }
+        let id_enc_cache = Cache::new(cache_size);
+        let id_dec_cache = Cache::new(cache_size);
+        let ope_enc_cache = Cache::new(cache_size);
+        let ope_dec_cache = Cache::new(cache_size);
+        TaoCrypto {
+            keys: keys,
+            id_enc_cache: id_enc_cache,
+            id_dec_cache: id_dec_cache,
+            ope_enc_cache: ope_enc_cache,
+            ope_dec_cache: ope_dec_cache,
+        }
     }
 
     pub fn encrypt_query(&self, query: Query) -> Query {
@@ -111,8 +125,12 @@ impl TaoCrypto {
     }
 
     pub fn encrypt_ope(&self, data: i64) -> i64 {
+        let _cache_read = match self.ope_enc_cache.get(&data) {
+            Some(val) => return val,
+            _ => (),
+        };
         let mut ope = OPE {
-            key: "ope-testing-key".to_string(),
+            key: self.keys.ope_key.clone(),
             in_range: Range {
                 start: 1,
                 end: DEFAULT_INPUT_RANGE_END,
@@ -122,25 +140,39 @@ impl TaoCrypto {
                 end: DEFAULT_OUTPUT_RANGE_END,
             },
         };
-        let encrypt = ope.encrypt(data.try_into().unwrap());
 
-        return encrypt.try_into().unwrap();
+        let encrypted = ope.encrypt(data.try_into().unwrap())
+                           .try_into()
+                           .unwrap();
+        self.ope_enc_cache.insert(data, encrypted);
+
+        return encrypted;
     }
 
     pub fn encrypt_int(&self, data: i64) -> i64 {
+        let _cache_read = match self.id_enc_cache.get(&data) {
+            Some(val) => {
+                println!("cache read: {:#?}", val);
+                return val;
+            },
+            _ => (),
+        };
         let data_string = data.to_string();
         let data_bytes = data_string.into_bytes();
 
-        let ak = "my-tao-testing-key".to_string();
+        let ak = self.keys.aes_key.to_string();
         let mut aes =
             ctr(KeySize::KeySize256, &ak.into_bytes(), &[b'\x00'; 16]);
         aes.process(&data_bytes, &mut data_bytes.clone());
 
-        return data_bytes[0].into();
+        let encrypted = data_bytes[0].into();
+        self.id_enc_cache.insert(data, encrypted);
+
+        return encrypted;
     }
 
     pub fn encrypt_string(&self, data: String) -> String {
-        let ak = "my-tao-testing-key".to_string();
+        let ak = self.keys.aes_key.clone();
         let mut aes =
             ctr(KeySize::KeySize256, &ak.into_bytes(), &[b'\x00'; 16]);
         let data_bytes = data.into_bytes();

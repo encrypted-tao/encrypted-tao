@@ -60,7 +60,7 @@ pub struct TaoServer {
 impl TaoServer {
     pub fn new(env_path: String, encrypted: bool) -> Self {
         let db_config = DBConfig::new(&env_path);
-        let tao_crypto = TaoCrypto::new(&env_path);
+        let tao_crypto = TaoCrypto::new(&env_path, 1024);
         TaoServer {
             db_config,
             tao_crypto,
