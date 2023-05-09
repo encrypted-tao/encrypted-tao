@@ -205,21 +205,21 @@ mod tests {
 
     #[test]
     fn test_encrypt_int() {
-        let mut taocrypt = TaoCrypto::new(&"./.env".to_string());
+        let mut taocrypt = TaoCrypto::new(&"./.env".to_string(), 1024);
         let res = taocrypt.encrypt_int(8);
         assert_eq!(res, 56);
     }
 
     #[test]
     fn test_encrypt_idset() {
-        let mut taocrypt = TaoCrypto::new(&"./.env".to_string());
+        let mut taocrypt = TaoCrypto::new(&"./.env".to_string(), 1024);
         let encrypt = taocrypt.encrypt_idset(vec![78, 2, 4, 99]);
         assert_eq!(vec![55, 50, 52, 57], encrypt);
     }
 
     #[test]
     fn test_encrypt_string() {
-        let mut taocrypt = TaoCrypto::new(&"./.env".to_string());
+        let mut taocrypt = TaoCrypto::new(&"./.env".to_string(), 1024);
         let encrypt = taocrypt.encrypt_string("testing".to_string());
         let test = "116101115116105110103".to_string();
 
