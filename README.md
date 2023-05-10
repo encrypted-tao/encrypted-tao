@@ -1,14 +1,24 @@
 # encrypted-tao
 Simplified Implementation of Facebook's TAO, but encrypted
 
-## Optional Instructions
+## Set up
 1. Install `nix` if you want [https://nixos.org/download.html](https://nixos.org/download.html) (Recommended)
 ```
 $ sh <(curl -L https://nixos.org/nix/install) --no-daemon
 ```
 Otherwise use [`rustup`](https://github.com/rust-lang/rustup) to install the rust toolchain.
 
-2. With this, run
+2. `cd` into the project directory (where `shell.nix` resides) and run
+```
+$ nix-shell
+```
+Then, inside the nix-shell set up the rust toolchain
+```
+rustup install stable
+rustup default stable
+```
+
+3. With this, still inside the nix-shell, you can now run
 ```
 $ just nix-build  // to build inside a nix-shell
 $ just build      // if you already have rust/cargo locally
