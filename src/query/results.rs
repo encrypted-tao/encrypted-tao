@@ -7,14 +7,14 @@ use crate::query::crypto::TaoCrypto;
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DBRow {
     AssocRow {
-        id1: i64,
+        id1: String,
         atype: String,
-        id2: i64,
+        id2: String,
         t: i64,
         data: String,
     },
     ObjRow {
-        id: i64,
+        id: String,
         otype: String,
         data: String,
     },

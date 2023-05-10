@@ -5,8 +5,9 @@ let
     nixpkgs.rustup
     nixpkgs.clang
     nixpkgs.libiconv
-    nixpkgs.darwin.apple_sdk.frameworks.Security
-    nixpkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+    nixpkgs.openssl_1_1
+    nixpkgs.pkg-config
+    nixpkgs.just
   ];
  
 in

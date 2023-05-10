@@ -27,6 +27,7 @@ comp = "0.2.1"
 tink-core = "0.2.5"
 tink-daead = "0.2.5"
 tink-proto = "0.2.5"
+base64 = "0.21.0"
 
 [[bin]]
 name="tao-server"

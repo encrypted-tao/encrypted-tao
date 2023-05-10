@@ -16,6 +16,7 @@ extern crate tink_core;
 extern crate tink_daead;
 extern crate tink_proto;
 
+use base64::{Engine as _, engine::general_purpose};
 use crypto::aes::{ctr, ecb_decryptor, ecb_encryptor, KeySize};
 use crypto::symmetriccipher::{SynchronousStreamCipher, Decryptor, Encryptor};
 use crypto::blockmodes::PkcsPadding;
@@ -66,9 +67,6 @@ unsafe impl Send for Cipher {}
 pub struct TaoCrypto {
     keys: CryptKeys,
     cipher: Cipher,
-    //cipher: Box<dyn DeterministicAead>,
-    //    ope: OPE,
-    //   aes: Box<dyn SynchronousStreamCipher + 'static>
 }
 
 impl TaoCrypto {
@@ -77,10 +75,9 @@ impl TaoCrypto {
         
         tink_daead::init();
         let mycipher: Cipher =  Cipher::mydefault();
-        //let aeskey = tink_core::keyset::Handle::new(&tink_daead::aes_siv_key_template()).unwrap();
-        //let cipher = tink_daead::new(&aeskey).unwrap();
         TaoCrypto { keys, cipher: mycipher } //, cipher }
     }
+    
     pub fn encrypt_query(&self, query: Query) -> Query {
         let op = query.op;
         let args = match query.args {
@@ -91,15 +88,15 @@ impl TaoCrypto {
                 time,
                 data,
             } => TaoArgs::AssocAddArgs {
-                id1: self.encrypt_int(id1),
+                id1: self.encrypt_string(id1),
                 atype: self.encrypt_string(atype),
-                id2: self.encrypt_int(id2),
+                id2: self.encrypt_string(id2),
                 time: self.encrypt_ope(time),
                 data: self.encrypt_string(data),
             },
             TaoArgs::AssocGetArgs { id, atype, idset } => {
                 TaoArgs::AssocGetArgs {
-                    id: self.encrypt_int(id),
+                    id: self.encrypt_string(id),
                     atype: self.encrypt_string(atype),
                     idset: self.encrypt_idset(idset),
                 }
@@ -111,14 +108,14 @@ impl TaoCrypto {
                 tstart,
                 tend,
             } => TaoArgs::AssocRangeGetArgs {
-                id: self.encrypt_int(id),
+                id: self.encrypt_string(id),
                 atype: self.encrypt_string(atype),
                 idset: self.encrypt_idset(idset),
                 tstart: self.encrypt_ope(tstart),
                 tend: self.encrypt_ope(tend),
             },
             TaoArgs::AssocCountArgs { id, atype } => TaoArgs::AssocCountArgs {
-                id: self.encrypt_int(id),
+                id: self.encrypt_string(id),
                 atype: self.encrypt_string(atype),
             },
             TaoArgs::AssocRangeArgs {
@@ -128,17 +125,17 @@ impl TaoCrypto {
                 tend,
                 lim,
             } => TaoArgs::AssocRangeArgs {
-                id: self.encrypt_int(id),
+                id: self.encrypt_string(id),
                 atype: self.encrypt_string(atype),
                 tstart: self.encrypt_ope(tstart),
                 tend: self.encrypt_ope(tend),
                 lim: lim,
             },
             TaoArgs::ObjGetArgs { id } => TaoArgs::ObjGetArgs {
-                id: self.encrypt_int(id),
+                id: self.encrypt_string(id),
             },
             TaoArgs::ObjAddArgs { id, otype, data } => TaoArgs::ObjAddArgs {
-                id: self.encrypt_int(id),
+                id: self.encrypt_string(id),
                 otype: self.encrypt_string(otype),
                 data: self.encrypt_string(data),
             },
@@ -164,64 +161,36 @@ impl TaoCrypto {
         return encrypt.try_into().unwrap();
     }
 
-    pub fn encrypt_int(&self, data: i64) -> i64 {
-        let data_bytes = [data.to_le_bytes()[0]];
-
-        let res = self.cipher.aes_cipher.encrypt_deterministically(&data_bytes, b"test").unwrap();
-        println!("INTEGER ENCRYPTION for data {:?} result {:?}", data_bytes, res);
-        return res[0].into();
- 
-    }
-
     pub fn encrypt_string(&self, data: String) -> String {
-       
-        let data_bytes =  data.as_bytes();
-        let data_test: String = data_bytes.iter().map(ToString::to_string).collect();
-        let res = self.cipher.aes_cipher.encrypt_deterministically(&data_bytes, b"test").unwrap();
-    
+        let encrypted = self.cipher.aes_cipher.encrypt_deterministically(&data.into_bytes(), b"").unwrap();
+        let encoded = general_purpose::STANDARD_NO_PAD.encode(encrypted);
         
-        let data_string: String = res.iter().map(ToString::to_string).collect();
-
-
-        let bytes =  data_string.as_bytes();
-
-        println!("RES {:?} VS STRING {:?}", res, bytes); // shows difference between return type and encryption output
-        
-        let res1 = self.cipher.aes_cipher.decrypt_deterministically(&res, b"test").unwrap();
-
-        let data_string1 =  String::from_utf8_lossy(&res1);
-        //res1.iter().map(ToString::to_string).collect();
-        println!("decrypted test {} + {}", data_test, data_string1);
-        assert_eq!(&data[..], data_string1);
-        println!("decrypted test {} + {}", data_test, data_string1);
-      
-      
-        return data_string;
-        
+        return encoded;
     }
 
-    pub fn encrypt_idset(&self, data: Vec<i64>) -> Vec<i64> {
+    pub fn encrypt_idset(&self, data: Vec<String>) -> Vec<String> {
         let mut encrypt = data.clone();
 
         for i in 0..data.len() {
-            encrypt[i] = self.encrypt_int(data[i]);
+            encrypt[i] = self.encrypt_string(data[i].clone());
         }
         return encrypt;
     }
+    
     pub fn decrypt_result(&mut self, row:  DBRow) ->  DBRow {
         match row {
             DBRow::AssocRow {id1, atype, id2, t, data} => {
                 DBRow::AssocRow {
-                    id1: self.decrypt_int(id1),
+                    id1: self.decrypt_string(id1),
                     atype: self.decrypt_string(atype),
-                    id2: self.decrypt_int(id2),
+                    id2: self.decrypt_string(id2),
                     t: self.decrypt_ope(t),
                     data: self.decrypt_string(data),
                 }
             },
             DBRow::ObjRow {id, otype, data} => {
                 DBRow::ObjRow {
-                    id: self.decrypt_int(id),
+                    id: self.decrypt_string(id),
                     otype: self.decrypt_string(otype),
                     data: self.decrypt_string(data),
                 }
@@ -229,15 +198,7 @@ impl TaoCrypto {
             DBRow::Count(_) | DBRow::NoRes(_) => todo!()
         }
     }
-    pub fn decrypt_int(&mut self, data: i64) -> i64 {
-    
-        let data_bytes =  [data.to_le_bytes()[0]];
-        let res = self.cipher.aes_cipher.decrypt_deterministically(&data_bytes, b"test").unwrap();
-    
-        return res[0].into();
-    
-    
-    }
+
     pub fn decrypt_ope(&mut self, data: i64) -> i64 {
         let mut ope = OPE {
             key: "ope-testing-key".to_string(),
@@ -255,15 +216,15 @@ impl TaoCrypto {
         return decrypt.try_into().unwrap();
 
     }
+
     pub fn decrypt_string(&mut self, data: String) -> String {
-
-        let data_bytes =  data.as_bytes();
-        let res = self.cipher.aes_cipher.decrypt_deterministically(&data_bytes, b"test").unwrap();
-    
-        let data_string: String = res.iter().map(ToString::to_string).collect();
-
-        return data_string;
-
+        let decoded = match general_purpose::STANDARD_NO_PAD.decode(data) {
+           Ok(v) => v,
+           Err(e) => panic!("Decode Fail: {}", e),
+        };
+        let decrypted = self.cipher.aes_cipher.decrypt_deterministically(&decoded, b"").unwrap();
+        let plaintext: String = String::from_utf8_lossy(&decrypted).to_string();
+        return plaintext;
     }
     
 }
@@ -279,47 +240,22 @@ mod tests {
     use crate::query::crypto::TaoCrypto;
 
     #[test]
-    fn test_encrypt_int() {
-        let mut taocrypt = TaoCrypto::new(&"./.env".to_string());
-        let res = taocrypt.encrypt_int(8);
-        println!("testing encryption for int {}\n", res);
-        //assert_eq!(res, 56);
-    }
-
-    #[test]
     fn test_encrypt_idset() {
         let mut taocrypt = TaoCrypto::new(&"./.env".to_string());
-        let encrypt = taocrypt.encrypt_idset(vec![78, 2, 4, 99]);
+        let idset = vec!["78".to_string()];
+        let encrypt = taocrypt.encrypt_idset(idset);
         println!("Encrypted ID set {:?}\n", encrypt);
         //assert_eq!(vec![23, 18, 20, 25], encrypt);
     }
-
+    
     #[test]
-    fn test_encrypt_string() {
-        let mut taocrypt = TaoCrypto::new(&"./.env".to_string());
-        let encrypt = taocrypt.encrypt_string("testing".to_string());
-        //let test = "116101115116105110103".to_string();
-
-        //assert_eq!(encrypt, test);
-    }
-    #[test]
-    fn test_decrypt_int() {
-        let mut taocrypt = TaoCrypto::new(&"./.env".to_string());
-        let res = taocrypt.encrypt_int(8);
-        println!("Encrypted {}, Decrypted {}\n",taocrypt.encrypt_int(8), taocrypt.decrypt_int(res));
-        //assert_eq!(taocrypt.decrypt_int(res), 8);
-
-
-    }
-    #[test]
-    fn test_decrypt_string() 
+    fn test_enccrypt_decrypt_string() 
     {
         let mut taocrypt = TaoCrypto::new(&"./.env".to_string());
         let encrypt = taocrypt.encrypt_string("testing".to_string());
-
-        println!("Encrypted String {:?}\n", encrypt.as_bytes());
-        println!("Decrypted String {:?}\n", taocrypt.decrypt_string(encrypt).as_bytes());
-       // assert_eq!(taocrypt.decrypt_string(encrypt), "testing".to_string());
-
+        let decrypt = taocrypt.decrypt_string(encrypt.clone());
+        println!("Encrypted String {:#?}\n", encrypt);
+        println!("Decrypted String {:#?}\n", decrypt.as_bytes());
+        assert_eq!(decrypt, "testing".to_string());
     }
 }
