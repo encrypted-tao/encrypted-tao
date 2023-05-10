@@ -31,14 +31,13 @@ use crate::query::query::{Query, TaoArgs, TaoOp};
 pub const DEFAULT_INPUT_RANGE_END: u64 = u16::max_value() as u64 - 1;
 pub const DEFAULT_OUTPUT_RANGE_END: u64 = u32::max_value() as u64 - 1;
 
-
 pub struct CryptKeys {
     ope_key: String,
     aes_key: String,
 }
 
 impl CryptKeys {
-    pub fn new(env_path: &String) -> Self {
+    fn new(env_path: &String) -> Self {
         dotenv::from_path(env_path).ok();
         let ope_key = dotenv::var("OPE_KEY").unwrap();
         let aes_key = dotenv::var("AES_KEY").unwrap();
@@ -46,8 +45,28 @@ impl CryptKeys {
     }
 }
 
+pub struct Cipher {
+   pub  aes_cipher:  Box<dyn DeterministicAead>
+}
+impl Cipher {
+    fn mydefault() -> Cipher {
+        tink_daead::init();
+         let aeskey = tink_core::keyset::Handle::new(&tink_daead::aes_siv_key_template()).unwrap();
+         let aescipher = tink_daead::new(&aeskey).unwrap();
+
+         Cipher { aes_cipher: aescipher }
+    }
+}
+unsafe impl Sync for Cipher {} 
+unsafe impl Send for Cipher {}
+//static cipher: Cipher =  Cipher::mydefault();
+
+
+//static key_template: KeyTemplate = tink_daead::aes_siv_key_template();
 pub struct TaoCrypto {
     keys: CryptKeys,
+    cipher: Cipher,
+    //cipher: Box<dyn DeterministicAead>,
     //    ope: OPE,
     //   aes: Box<dyn SynchronousStreamCipher + 'static>
 }
@@ -55,7 +74,12 @@ pub struct TaoCrypto {
 impl TaoCrypto {
     pub fn new(env_path: &String) -> Self {
         let keys = CryptKeys::new(env_path);
-        TaoCrypto { keys }
+        
+        tink_daead::init();
+        let mycipher: Cipher =  Cipher::mydefault();
+        //let aeskey = tink_core::keyset::Handle::new(&tink_daead::aes_siv_key_template()).unwrap();
+        //let cipher = tink_daead::new(&aeskey).unwrap();
+        TaoCrypto { keys, cipher: mycipher } //, cipher }
     }
     pub fn encrypt_query(&self, query: Query) -> Query {
         let op = query.op;
@@ -141,45 +165,39 @@ impl TaoCrypto {
     }
 
     pub fn encrypt_int(&self, data: i64) -> i64 {
-        let data_string = data.to_string();
-       
-        let mut bytes = data_string.into_bytes();
-        let mut data_buf = RefReadBuffer::new(&bytes);
-        let mut buf = [0; 64];
-        let mut out_buf = RefWriteBuffer::new(&mut buf);
+        let data_bytes = [data.to_le_bytes()[0]];
 
-        let ak = "my-tao-testing-key".to_string();
-        let mut aes =
-            ctr(KeySize::KeySize256, &ak.into_bytes(), &[b'\x00'; 16]);
-        aes.encrypt(&mut data_buf, &mut out_buf, true);
-    
-        let mut data_buf = out_buf.take_read_buffer();
-
-        let mut data_bytes = data_buf.take_remaining();
-
-        return bytes[0].into();
+        let res = self.cipher.aes_cipher.encrypt_deterministically(&data_bytes, b"test").unwrap();
+        println!("INTEGER ENCRYPTION for data {:?} result {:?}", data_bytes, res);
+        return res[0].into();
+ 
     }
 
     pub fn encrypt_string(&self, data: String) -> String {
-        let ak = "my-tao-testing-key".to_string();
-
-        let mut aes =
-            ctr(KeySize::KeySize256, &ak.into_bytes(), &[b'\x00'; 16]);
-
-        let mut bytes = data.into_bytes();
-        let mut data_buf = RefReadBuffer::new(&bytes);
-        let mut buf = [0; 64];
-        let mut out_buf = RefWriteBuffer::new(&mut buf);
-
-        aes.encrypt(&mut data_buf, &mut out_buf, true);
-
-        let mut data_buf = out_buf.take_read_buffer();
-
-        let mut data_bytes = data_buf.take_remaining();
-        let data_string: String =
-            bytes.iter().map(ToString::to_string).collect();
+       
+        let data_bytes =  data.as_bytes();
+        let data_test: String = data_bytes.iter().map(ToString::to_string).collect();
+        let res = self.cipher.aes_cipher.encrypt_deterministically(&data_bytes, b"test").unwrap();
     
+        
+        let data_string: String = res.iter().map(ToString::to_string).collect();
+
+
+        let bytes =  data_string.as_bytes();
+
+        println!("RES {:?} VS STRING {:?}", res, bytes); // shows difference between return type and encryption output
+        
+        let res1 = self.cipher.aes_cipher.decrypt_deterministically(&res, b"test").unwrap();
+
+        let data_string1 =  String::from_utf8_lossy(&res1);
+        //res1.iter().map(ToString::to_string).collect();
+        println!("decrypted test {} + {}", data_test, data_string1);
+        assert_eq!(&data[..], data_string1);
+        println!("decrypted test {} + {}", data_test, data_string1);
+      
+      
         return data_string;
+        
     }
 
     pub fn encrypt_idset(&self, data: Vec<i64>) -> Vec<i64> {
@@ -212,24 +230,13 @@ impl TaoCrypto {
         }
     }
     pub fn decrypt_int(&mut self, data: i64) -> i64 {
-        //let data_string = data.to_string();
-        
-        let bytes = [data.to_le_bytes()[0]];
-        println!("INTERGERS, INPUT DATA AS STRING {}\n INPUT DATA AS BYTES {:?}, BYTE STRING {:?}", data, bytes, data.to_be_bytes());
-        let mut data_buf = RefReadBuffer::new(&bytes);
-        let mut buf = [0; 16];
-        let mut out_buf = RefWriteBuffer::new(&mut buf);
-
-        let ak = "my-tao-testing-key".to_string();
-        let mut aes = ctr(KeySize::KeySize256, &ak.into_bytes(), &[b'\x00'; 16]);
-       
-        aes.decrypt(&mut data_buf, &mut out_buf, false);
     
-        let mut data_buf = out_buf.take_read_buffer();
-        let mut data_bytes = data_buf.take_remaining();
-        println!("OUTPUT DATA BUF {:?}", data_bytes);
+        let data_bytes =  [data.to_le_bytes()[0]];
+        let res = self.cipher.aes_cipher.decrypt_deterministically(&data_bytes, b"test").unwrap();
     
-        return data_bytes[0].into();
+        return res[0].into();
+    
+    
     }
     pub fn decrypt_ope(&mut self, data: i64) -> i64 {
         let mut ope = OPE {
@@ -249,28 +256,14 @@ impl TaoCrypto {
 
     }
     pub fn decrypt_string(&mut self, data: String) -> String {
-        let ak = "my-tao-testing-key".to_string();
-        
-        let mut aes =
-            ctr(KeySize::KeySize256, &ak.into_bytes(), &[b'\x00'; 16]);
-        
-        let mut bytes = data.as_bytes();
-        println!("STRING, INPUT DATA AS STRING {}\n INPUT DATA AS BYTES {:?}", data, bytes);
-        let mut data_buf = RefReadBuffer::new(&bytes);
-        let mut buf = [0; 16];
-        let mut out_buf = RefWriteBuffer::new(&mut buf);
 
-        aes.decrypt(&mut data_buf, &mut out_buf, true);
-
-        let mut data_buf = out_buf.take_read_buffer();
-
-        let mut data_bytes = data_buf.take_remaining();
-
-        
-        let data_string: String = data_bytes.iter().map(ToString::to_string).collect();
+        let data_bytes =  data.as_bytes();
+        let res = self.cipher.aes_cipher.decrypt_deterministically(&data_bytes, b"test").unwrap();
     
-        println!("STRING, OUTPUT as bytes {:?}\n OUTPUT AS STRING {}", data_bytes, data_string);
+        let data_string: String = res.iter().map(ToString::to_string).collect();
+
         return data_string;
+
     }
     
 }
