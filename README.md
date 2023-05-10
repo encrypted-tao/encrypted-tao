@@ -14,8 +14,8 @@ $ nix-shell
 ```
 Then, inside the nix-shell set up the rust toolchain
 ```
-rustup install stable
-rustup default stable
+$ rustup install stable
+$ rustup default stable
 ```
 
 3. With this, still inside the nix-shell, you can now run
