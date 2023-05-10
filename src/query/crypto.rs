@@ -12,15 +12,11 @@ extern crate aes;
 extern crate crypto; 
 extern crate hmac;
 extern crate sha2;
-extern crate tink_core;
-extern crate tink_daead;
-extern crate tink_proto;
+
 
 use crypto::aes::{ctr, ecb_decryptor, ecb_encryptor, KeySize};
 use crypto::symmetriccipher::{SynchronousStreamCipher, Decryptor, Encryptor};
 use crypto::blockmodes::PkcsPadding;
-use tink_core::DeterministicAead;
-use tink_proto::KeyTemplate;
 use crate::ope::ope::ope::Range;
 use crate::ope::ope::ope::OPE;
 use crate::query::results::DBRow;
