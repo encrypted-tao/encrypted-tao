@@ -139,7 +139,7 @@ impl TaoServer {
     async fn assoc_add(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
 
-        let sql_query = "INSERT INTO assoc_test(id1, atype, id2, t, data) \
+        let sql_query = "INSERT INTO ASSOC_encrypt(id1, atype, id2, t, data) \
                          VALUES ($1, $2, $3, $4, $5)";
 
         let (id1, ty, id2, time, data) = match query.args {
@@ -176,7 +176,7 @@ impl TaoServer {
         let in_set = format_in_clause(&idset, 2);
         let sql_query = format!(
             "SELECT * \
-             FROM assoc_test \
+             FROM ASSOC_encrypt \
              WHERE id1 = $1 \
              AND atype = $2 \
              AND id2 in {in_set}"
@@ -211,7 +211,7 @@ impl TaoServer {
         let in_set = format_in_clause(&idset, 4);
         let sql_query = format!(
             "SELECT * \
-             FROM assoc_test \
+             FROM ASSOC_encrypt \
              WHERE id1 = $1 \
              AND atype = $2 \
              AND t >= $3 \
@@ -239,7 +239,7 @@ impl TaoServer {
     async fn assoc_count(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
         let sql_query = "SELECT COUNT(*) \
-                     FROM assoc_test \
+                     FROM ASSOC_encrypt \
                      WHERE id1 = $1 \
                        AND atype = $2";
 
@@ -261,7 +261,7 @@ impl TaoServer {
         let client = self.db_connect().await.unwrap();
 
         let sql_query = "SELECT * \
-                     FROM assoc_test \
+                     FROM ASSOC_encrypt \
                      WHERE id1 = $1 \
                        AND atype = $2 \
                        AND t >= $3 \
@@ -293,7 +293,7 @@ impl TaoServer {
         let client = self.db_connect().await.unwrap();
 
         let sql_query = "SELECT * \
-                         FROM obj_test \
+                         FROM OBJ_encrypt \
                          WHERE id = $1";
 
         let id = match query.args {
@@ -311,7 +311,7 @@ impl TaoServer {
     async fn obj_add(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
 
-        let sql_query = "INSERT INTO obj_test(id, otype, data) \
+        let sql_query = "INSERT INTO OBJ_encrypt(id, otype, data) \
                          VALUES ($1, $2, $3)";
 
         let (id, ty, data) = match query.args {

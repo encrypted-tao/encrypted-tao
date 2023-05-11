@@ -308,9 +308,9 @@ mod tests {
                 end: DEFAULT_OUTPUT_RANGE_END,
             },
         };
-        let a = test.encrypt(25 as u64);
-        let b = test.encrypt(200 as u64);
-        let c = test.encrypt(2500 as u64);
+        let a = test.encrypt(13 as u64);
+        let b = test.encrypt(14 as u64);
+        let c = test.encrypt(15 as u64);
         println!("result of a: {}, b: {}, c: {}", a, b, c);
 
         assert!(a < b);
