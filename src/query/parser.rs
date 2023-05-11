@@ -144,7 +144,7 @@ fn parse_tao_args(
             };
         }
         TaoOp::ObjGet => {
-            let id: String = args.next().unwrap().to_string();
+            let id: String = args.next().unwrap().as_str().to_string();
 
             return TaoArgs::ObjGetArgs { id: id };
         }
