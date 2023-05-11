@@ -8,6 +8,14 @@ $ sh <(curl -L https://nixos.org/nix/install) --no-daemon
 ```
 Otherwise use [`rustup`](https://github.com/rust-lang/rustup) to install the rust toolchain.
 
+To test this on the apple silicone, add the following to the list of `nixpkgs` in `shell.nix`:
+```
+nixpkgs.darwin.apple_sdk.frameworks.Security
+nixpkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+```
+One of our dependencies related to cryptography only works on x86 machines. On the apple silicone, you can probably
+only test the `eval-nonencrypted` branch.
+
 2. `cd` into the project directory (where `shell.nix` resides) and run
 ```
 $ nix-shell
