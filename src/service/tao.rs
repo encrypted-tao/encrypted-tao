@@ -104,7 +104,7 @@ impl TaoServer {
     }
 
     pub async fn pipeline(&mut self, query_input: String) -> HttpResponse {
-        // println!("Received Query: {:#?}", query_input);
+        println!("Received Query: {:#?}", query_input);
         let parsed_queries = parser::parse(query_input.as_str());
         let tao_queries = match self.encrypted {
             true => parsed_queries

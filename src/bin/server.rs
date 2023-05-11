@@ -26,6 +26,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(app_data.clone())
             .configure(service::tao::config)
     })
+    .workers(128)
     .bind(("localhost", 8080))?
     .run()
     .await
