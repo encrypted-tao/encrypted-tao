@@ -5,6 +5,23 @@ use awc::Client;
 
 use encrypted_tao::service;
 
+pub struct Config {
+    pub server_addr: String,
+    pub server_port: String,
+}
+
+impl Config {
+    pub fn new(env_path: String) -> Self {
+        dotenv::from_path(env_path).ok();
+        let server_addr = dotenv::var("SERVER_ADDR").unwrap();
+        let server_port = dotenv::var("SERVER_PORT").unwrap();
+        Config {
+            server_addr,
+            server_port,
+        }
+    }
+}
+
 async fn execute_tao_query(
     host: String,
     port: String,
@@ -58,10 +75,12 @@ fn print_help() {
 
 #[actix_rt::main]
 async fn main() {
-    let args: Vec<String> = env::args().collect();
-
-    let host = &args[1];
-    let port = &args[2];
+    let mut env_path = env!("CARGO_MANIFEST_DIR").to_string();
+    env_path.push_str("/.env");
+    
+    let config = Config::new(env_path);
+    let host = config.server_addr;
+    let port = config.server_port;
 
     print_header(host.to_string(), port.to_string());
     print_help();
