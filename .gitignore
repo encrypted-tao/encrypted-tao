@@ -1,4 +1,4 @@
-.swp
+*.swp
 /.env
 .DS_Store
 main.rs
