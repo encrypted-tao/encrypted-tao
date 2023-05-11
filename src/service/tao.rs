@@ -60,9 +60,9 @@ pub struct TaoServer {
 }
 
 impl TaoServer {
-    pub fn new(env_path: String, encrypted: bool) -> Self {
+    pub fn new(env_path: String, cache_size: usize, encrypted: bool) -> Self {
         let db_config = DBConfig::new(&env_path);
-        let tao_crypto = TaoCrypto::new(&env_path);
+        let tao_crypto = TaoCrypto::new(&env_path, cache_size);
         TaoServer {
             db_config,
             tao_crypto,
@@ -139,7 +139,7 @@ impl TaoServer {
     async fn assoc_add(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
 
-        let sql_query = "INSERT INTO Associations(id1, atype, id2, t, data) \
+        let sql_query = "INSERT INTO assoc_test(id1, atype, id2, t, data) \
                          VALUES ($1, $2, $3, $4, $5)";
 
         let (id1, ty, id2, time, data) = match query.args {
@@ -176,7 +176,7 @@ impl TaoServer {
         let in_set = format_in_clause(&idset, 2);
         let sql_query = format!(
             "SELECT * \
-             FROM Associations \
+             FROM assoc_test \
              WHERE id1 = $1 \
              AND atype = $2 \
              AND id2 in {in_set}"
@@ -211,7 +211,7 @@ impl TaoServer {
         let in_set = format_in_clause(&idset, 4);
         let sql_query = format!(
             "SELECT * \
-             FROM Associations \
+             FROM assoc_test \
              WHERE id1 = $1 \
              AND atype = $2 \
              AND t >= $3 \
@@ -239,7 +239,7 @@ impl TaoServer {
     async fn assoc_count(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
         let sql_query = "SELECT COUNT(*) \
-                     FROM Associations \
+                     FROM assoc_test \
                      WHERE id1 = $1 \
                        AND atype = $2";
 
@@ -249,7 +249,7 @@ impl TaoServer {
         };
         // here !
         let resp = &client
-            .query(sql_query, &[&id, &atype.as_str()])
+            .query(sql_query, &[&id.as_str(), &atype.as_str()])
             .await
             .unwrap();
 
@@ -261,7 +261,7 @@ impl TaoServer {
         let client = self.db_connect().await.unwrap();
 
         let sql_query = "SELECT * \
-                     FROM Associations \
+                     FROM assoc_test \
                      WHERE id1 = $1 \
                        AND atype = $2 \
                        AND t >= $3 \
@@ -279,9 +279,9 @@ impl TaoServer {
             } => (id, atype, tstart, tend, lim),
             _ => panic!("Incorrect args to obj get"),
         };
-        // here !!
+
         let resp = &client
-            .query(sql_query, &[&id, &atype.as_str(), &tstart, &tend, &lim])
+            .query(sql_query, &[&id.as_str(), &atype.as_str(), &tstart, &tend, &lim])
             .await
             .unwrap();
 
@@ -293,7 +293,7 @@ impl TaoServer {
         let client = self.db_connect().await.unwrap();
 
         let sql_query = "SELECT * \
-                         FROM Objects \
+                         FROM obj_test \
                          WHERE id = $1";
 
         let id = match query.args {
@@ -301,16 +301,17 @@ impl TaoServer {
             _ => panic!("Incorrect args to obj get"),
         };
 
-        let resp = &client.query(sql_query, &[&id]).await.unwrap();
+        let resp = &client.query(sql_query, &[&id.as_str()]).await.unwrap();
 
         let res = deserialize_rows(&query.op, resp);
+        
         return Some(res);
     }
 
     async fn obj_add(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
 
-        let sql_query = "INSERT INTO Objects(id, otype, data) \
+        let sql_query = "INSERT INTO obj_test(id, otype, data) \
                          VALUES ($1, $2, $3)";
 
         let (id, ty, data) = match query.args {
@@ -319,7 +320,7 @@ impl TaoServer {
         };
 
         let resp = &client
-            .query(sql_query, &[&id, &ty.as_str(), &data.as_str()])
+            .query(sql_query, &[&id.as_str(), &ty.as_str(), &data.as_str()])
             .await
             .unwrap();
 
@@ -339,7 +340,6 @@ pub async fn query_handler(
     query: Json<QueryRequest>,
 ) -> HttpResponse {
     let res = tao.lock().unwrap().pipeline(query.into_inner().query).await;
-    // let res = TaoServer::pipeline(&tao, query.into_inner().query).await;
     return res;
 }
 

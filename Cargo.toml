@@ -28,6 +28,7 @@ tink-core = "0.2.5"
 tink-daead = "0.2.5"
 tink-proto = "0.2.5"
 base64 = "0.21.0"
+quick_cache = "0.3.0"
 
 [[bin]]
 name="tao-server"

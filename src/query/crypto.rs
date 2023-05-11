@@ -15,6 +15,7 @@ extern crate sha2;
 extern crate tink_core;
 extern crate tink_daead;
 extern crate tink_proto;
+extern crate quick_cache;
 
 use crate::ope::ope::ope::Range;
 use crate::ope::ope::ope::OPE;
@@ -25,6 +26,7 @@ use crypto::blockmodes::PkcsPadding;
 use crypto::symmetriccipher::{Decryptor, Encryptor, SynchronousStreamCipher};
 use tink_core::DeterministicAead;
 use tink_proto::KeyTemplate;
+use quick_cache::sync::{Cache};
 
 use crate::query::query::{Query, TaoArgs, TaoOp};
 use crypto::buffer::{
@@ -51,6 +53,7 @@ impl CryptKeys {
 pub struct Cipher {
     pub aes_cipher: Box<dyn DeterministicAead>,
 }
+
 impl Cipher {
     fn mydefault() -> Cipher {
         tink_daead::init();
@@ -66,24 +69,36 @@ impl Cipher {
 }
 unsafe impl Sync for Cipher {}
 unsafe impl Send for Cipher {}
-//static cipher: Cipher =  Cipher::mydefault();
 
-//static key_template: KeyTemplate = tink_daead::aes_siv_key_template();
 pub struct TaoCrypto {
     keys: CryptKeys,
     cipher: Cipher,
+    aes_enc_cache: Cache<String, String>,
+    aes_dec_cache: Cache<String, String>,
+    ope_enc_cache: Cache<i64, i64>,
+    ope_dec_cache: Cache<i64, i64>,
 }
 
 impl TaoCrypto {
-    pub fn new(env_path: &String) -> Self {
+    pub fn new(env_path: &String, cache_size: usize) -> Self {
         let keys = CryptKeys::new(env_path);
 
         tink_daead::init();
         let mycipher: Cipher = Cipher::mydefault();
+
+        let aes_enc_cache = Cache::new(cache_size);
+        let aes_dec_cache = Cache::new(cache_size);
+        let ope_enc_cache = Cache::new(cache_size);
+        let ope_dec_cache = Cache::new(cache_size);
+
         TaoCrypto {
             keys,
             cipher: mycipher,
-        } //, cipher }
+            aes_enc_cache: aes_enc_cache,
+            aes_dec_cache: aes_dec_cache,
+            ope_enc_cache: ope_enc_cache,
+            ope_dec_cache: ope_dec_cache,
+        }
     }
 
     pub fn encrypt_query(&self, query: Query) -> Query {
@@ -153,6 +168,11 @@ impl TaoCrypto {
     }
 
     pub fn encrypt_ope(&self, data: i64) -> i64 {
+        let _cache_read = match self.ope_enc_cache.get(&data) {
+            Some(val) => return val,
+            _ => (),
+        };
+
         let mut ope = OPE {
             key: "ope-testing-key".to_string(),
             in_range: Range {
@@ -164,19 +184,30 @@ impl TaoCrypto {
                 end: DEFAULT_OUTPUT_RANGE_END,
             },
         };
-        let encrypt = ope.encrypt(data.try_into().unwrap());
 
-        return encrypt.try_into().unwrap();
+        let encrypted = ope.encrypt(data.try_into().unwrap())
+                           .try_into()
+                           .unwrap();
+        self.ope_enc_cache.insert(data, encrypted);
+
+        return encrypted;
     }
 
     pub fn encrypt_string(&self, data: String) -> String {
+        let _cache_read = match self.aes_enc_cache.get(&data) {
+            Some(val) => return val,
+            _ => (),
+        };
+
         let encrypted = self
             .cipher
             .aes_cipher
-            .encrypt_deterministically(&data.into_bytes(), b"")
+            .encrypt_deterministically(&data.clone().into_bytes(), b"")
             .unwrap();
         let encoded = general_purpose::STANDARD_NO_PAD.encode(encrypted);
 
+        self.aes_enc_cache.insert(data.clone(), encoded.clone());
+    
         return encoded;
     }
 
@@ -215,6 +246,11 @@ impl TaoCrypto {
     }
 
     pub fn decrypt_ope(&mut self, data: i64) -> i64 {
+        let _cache_read = match self.ope_dec_cache.get(&data) {
+            Some(val) => return val,
+            _ => (),
+        };
+
         let mut ope = OPE {
             key: "ope-testing-key".to_string(),
             in_range: Range {
@@ -226,13 +262,20 @@ impl TaoCrypto {
                 end: DEFAULT_OUTPUT_RANGE_END,
             },
         };
-        let decrypt = ope.decrypt(data.try_into().unwrap());
 
-        return decrypt.try_into().unwrap();
+        let decrypted = ope.decrypt(data.try_into().unwrap()).try_into().unwrap();
+        self.ope_dec_cache.insert(data, decrypted);
+
+        return decrypted;
     }
 
     pub fn decrypt_string(&mut self, data: String) -> String {
-        let decoded = match general_purpose::STANDARD_NO_PAD.decode(data) {
+        let _cache_read = match self.aes_dec_cache.get(&data) {
+            Some(val) => return val,
+            _ => (),
+        };
+
+        let decoded = match general_purpose::STANDARD_NO_PAD.decode(data.clone()) {
             Ok(v) => v,
             Err(e) => panic!("Decode Fail: {}", e),
         };
@@ -242,6 +285,9 @@ impl TaoCrypto {
             .decrypt_deterministically(&decoded, b"")
             .unwrap();
         let plaintext: String = String::from_utf8_lossy(&decrypted).to_string();
+
+        self.aes_dec_cache.insert(data.clone(), plaintext.clone());
+
         return plaintext;
     }
 }
@@ -258,7 +304,7 @@ mod tests {
 
     #[test]
     fn test_encrypt_idset() {
-        let mut taocrypt = TaoCrypto::new(&"./.env".to_string());
+        let mut taocrypt = TaoCrypto::new(&"./.env".to_string(), 0);
         let idset = vec!["78".to_string()];
         let encrypt = taocrypt.encrypt_idset(idset);
         println!("Encrypted ID set {:?}\n", encrypt);
@@ -267,7 +313,7 @@ mod tests {
 
     #[test]
     fn test_enccrypt_decrypt_string() {
-        let mut taocrypt = TaoCrypto::new(&"./.env".to_string());
+        let mut taocrypt = TaoCrypto::new(&"./.env".to_string(), 0);
         let encrypt = taocrypt.encrypt_string("testing".to_string());
         let decrypt = taocrypt.decrypt_string(encrypt.clone());
         println!("Encrypted String {:#?}\n", encrypt);
