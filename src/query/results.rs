@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 use tokio_postgres::Row;
 
-use crate::query::query::TaoOp;
 use crate::query::crypto::TaoCrypto;
+use crate::query::query::TaoOp;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum DBRow {
     AssocRow {
         id1: String,

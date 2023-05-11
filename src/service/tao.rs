@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use actix_web::{
     get, post,
     web::{scope, Data, Json, ServiceConfig},
@@ -101,7 +103,7 @@ impl TaoServer {
         return res;
     }
 
-    pub async fn pipeline(&self, query_input: String) -> HttpResponse {
+    pub async fn pipeline(&mut self, query_input: String) -> HttpResponse {
         println!("Received Query: {:#?}", query_input);
         let parsed_queries = parser::parse(query_input.as_str());
         let tao_queries = match self.encrypted {
@@ -111,12 +113,25 @@ impl TaoServer {
                 .collect::<Vec<Query>>(),
             false => parsed_queries,
         };
-        let results = join_all(
+        let response = join_all(
             tao_queries
                 .iter()
                 .map(|q| async { self.db_execute(q.clone()).await.unwrap() }),
         )
         .await;
+
+        let results = match self.encrypted {
+            true => response
+                .into_iter()
+                .map(|rows| {
+                    rows
+                    .into_iter()
+                    .map(|row| self.tao_crypto.decrypt_result(row))
+                    .collect::<Vec<DBRow>>()
+                })
+                .collect::<Vec<Vec<DBRow>>>(),
+            false => response,
+        };
 
         return HttpResponse::Ok().json(&QueryResponse { response: results });
     }
@@ -214,7 +229,7 @@ impl TaoServer {
             &tend as &(dyn ToSql + Sync),
         ];
         params.extend(idset);
-        // here !!
+
         let resp = &client.query(&sql_query, &params).await.unwrap();
 
         let res = deserialize_rows(&query.op, resp);
@@ -241,7 +256,7 @@ impl TaoServer {
         let res = deserialize_rows(&query.op, resp);
         return Some(res);
     }
-    // TODO encrypt here
+    
     async fn assoc_range(&self, query: Query) -> Option<Vec<DBRow>> {
         let client = self.db_connect().await.unwrap();
 
@@ -320,10 +335,11 @@ async fn hello() -> impl Responder {
 
 #[post("/query")]
 pub async fn query_handler(
-    tao: Data<TaoServer>,
+    tao: Data<Mutex<TaoServer>>,
     query: Json<QueryRequest>,
 ) -> HttpResponse {
-    let res = TaoServer::pipeline(&tao, query.into_inner().query).await;
+    let res = tao.lock().unwrap().pipeline(query.into_inner().query).await;
+    // let res = TaoServer::pipeline(&tao, query.into_inner().query).await;
     return res;
 }
 
