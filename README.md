@@ -73,11 +73,3 @@ To run the TAO interactive client:
 ```
 $ ./tao-interactive <host> <port>
 ```
-
-
-## Stuff left to do:
-- Implement query encryption/decryption 
-- Implement caching mechanism
-- Create more realistic and larger dataset (and visualize it)
-- Implement/setup benchmarking suite
-- Run evaluations
