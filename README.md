@@ -13,7 +13,7 @@ To test this on an M1 MacOS, add the following to the list of `nixpkgs` in `shel
 nixpkgs.darwin.apple_sdk.frameworks.Security
 nixpkgs.darwin.apple_sdk.frameworks.SystemConfiguration
 ```
-One of our dependencies related to cryptography only works on x86 machines. On the apple silicone, you can probably
+One of our dependencies related to cryptography only works on x86 machines. On an M1 Mac, you can probably
 only test the `eval-nonencrypted` branch.
 
 2. `cd` into the project directory (where `shell.nix` resides) and run
