@@ -8,7 +8,7 @@ $ sh <(curl -L https://nixos.org/nix/install) --no-daemon
 ```
 Otherwise use [`rustup`](https://github.com/rust-lang/rustup) to install the rust toolchain.
 
-To test this on the apple silicone, add the following to the list of `nixpkgs` in `shell.nix`:
+To test this on an M1 MacOS, add the following to the list of `nixpkgs` in `shell.nix`:
 ```
 nixpkgs.darwin.apple_sdk.frameworks.Security
 nixpkgs.darwin.apple_sdk.frameworks.SystemConfiguration
